@@ -1,0 +1,11 @@
+[package]
+authors = ["Nick Fitzgerald <fitzgen@gmail.com>"]
+name = "generational-arena"
+version = "0.1.0"
+
+[dependencies]
+cfg-if = "0.1.5"
+
+[features]
+default = ["std"]
+std = []
