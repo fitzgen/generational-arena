@@ -1,5 +1,10 @@
 # `generational-arena`
 
+[![](https://docs.rs/generational-arena/badge.svg)](https://docs.rs/generational-arena/)
+[![](https://img.shields.io/crates/v/generational-arena.svg)](https://crates.io/crates/generational-arena)
+[![](https://img.shields.io/crates/d/generational-arena.svg)](https://crates.io/crates/generational-arena)
+[![Travis CI Build Status](https://travis-ci.org/fitzgen/generational-arena.svg?branch=master)](https://travis-ci.org/fitzgen/generational-arena)
+
 A safe arena allocator that allows deletion without suffering from [the ABA
 problem](https://en.wikipedia.org/wiki/ABA_problem) by using generational
 indices.
