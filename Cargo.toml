@@ -1,7 +1,16 @@
 [package]
 authors = ["Nick Fitzgerald <fitzgen@gmail.com>"]
+categories = ["memory-management", "no-std", "rust-patterns", "data-structures"]
+description = "A safe arena allocator that supports deletion without suffering from the ABA problem by using generational indices."
+keywords = ["generation", "index", "arena", "ecs"]
+license = "MPL-2.0"
 name = "generational-arena"
+readme = "./README.md"
+repository = "https://github.com/fitzgen/generational-arena"
 version = "0.1.0"
+
+[badges]
+travis-ci = { repository = "fitzgen/generational-arena" }
 
 [dependencies]
 cfg-if = "0.1.5"
