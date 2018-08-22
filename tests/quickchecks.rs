@@ -4,6 +4,7 @@ extern crate quickcheck;
 
 use generational_arena::Arena;
 use std::collections::BTreeSet;
+use std::iter::FromIterator;
 
 quickcheck! {
     fn always_contains_inserted_elements(elems: Vec<usize>) -> bool {
@@ -81,10 +82,7 @@ quickcheck! {
 
 quickcheck! {
     fn iter(elems: BTreeSet<usize>) -> bool {
-        let mut arena = Arena::new();
-        for e in elems.iter().cloned() {
-            arena.insert(e);
-        }
+        let arena = Arena::from_iter(elems.clone());
         arena.iter().all(|(idx, value)| {
             elems.contains(value) && arena.get(idx) == Some(value)
         })
@@ -93,10 +91,7 @@ quickcheck! {
 
 quickcheck! {
     fn iter_mut(elems: BTreeSet<usize>) -> bool {
-        let mut arena = Arena::new();
-        for e in elems.iter().cloned() {
-            arena.insert(e);
-        }
+        let mut arena = Arena::from_iter(elems.clone());
         for (_, value) in &mut arena {
             *value += 1;
         }
@@ -104,5 +99,12 @@ quickcheck! {
             let orig_value = value - 1;
             elems.contains(&orig_value) && arena.get(idx) == Some(value)
         })
+    }
+}
+
+quickcheck! {
+    fn from_iter_into_iter(elems: BTreeSet<usize>) -> bool {
+        let arena = Arena::from_iter(elems.clone());
+        arena.into_iter().collect::<BTreeSet<_>>() == elems
     }
 }

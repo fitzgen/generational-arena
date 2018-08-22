@@ -14,7 +14,8 @@ cfg_if! {
     }
 }
 
-use core::iter;
+use core::cmp;
+use core::iter::{self, Extend, FromIterator};
 use core::mem;
 use core::slice;
 
@@ -265,5 +266,25 @@ impl<'a, T> Iterator for IterMut<'a, T> {
                 None => return None,
             }
         }
+    }
+}
+
+impl<T> Extend<T> for Arena<T> {
+    fn extend<I: IntoIterator<Item=T>>(&mut self, iter: I) {
+        for t in iter {
+            self.insert(t);
+        }
+    }
+}
+
+impl<T> FromIterator<T> for Arena<T> {
+    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
+        let iter = iter.into_iter();
+        let (lower, upper) = iter.size_hint();
+        let cap = upper.unwrap_or(lower);
+        let cap = cmp::max(cap, 1);
+        let mut arena = Arena::with_capacity(cap);
+        arena.extend(iter);
+        arena
     }
 }
