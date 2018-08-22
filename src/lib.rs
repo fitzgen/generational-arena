@@ -265,6 +265,7 @@ impl<T> Arena<T> {
     ///     }
     /// };
     /// ```
+    #[inline]
     pub fn try_insert(&mut self, value: T) -> Result<Index, T> {
         match self.free_list_head {
             None => Err(value),
@@ -299,17 +300,24 @@ impl<T> Arena<T> {
     /// let idx = arena.insert(42);
     /// assert_eq!(arena[idx], 42);
     /// ```
+    #[inline]
     pub fn insert(&mut self, value: T) -> Index {
         match self.try_insert(value) {
             Ok(i) => i,
             Err(value) => {
-                let len = self.items.len();
-                self.reserve(len);
-                self.try_insert(value)
-                    .map_err(|_| ())
-                    .expect("inserting will always succeed after reserving additional space")
+                self.insert_slow_path(value)
             }
         }
+    }
+
+    #[inline(never)]
+    fn insert_slow_path(&mut self, value: T) -> Index {
+        let len = self.items.len();
+        self.reserve(len);
+        self.try_insert(value)
+            .map_err(|_| ())
+            .expect("inserting will always succeed after reserving additional space")
+
     }
 
     /// Remove the element at index `i` from the arena.
