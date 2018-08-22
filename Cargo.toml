@@ -27,3 +27,6 @@ harness = false
 [features]
 default = ["std"]
 std = []
+
+[profile.bench]
+debug = true
