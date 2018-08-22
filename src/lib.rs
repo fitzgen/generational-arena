@@ -35,44 +35,53 @@ pub struct Index {
     generation: u64,
 }
 
+const DEFAULT_CAPACITY: usize = 4;
+
 impl<T> Arena<T> {
+    pub fn new() -> Arena<T> {
+        Arena::with_capacity(DEFAULT_CAPACITY)
+    }
+
     pub fn with_capacity(n: usize) -> Arena<T> {
         assert!(n > 0);
-        let items: Vec<_> = (0..n)
-            .map(|i| {
-                if i == n - 1 {
-                    Entry::Free { next_free: None }
-                } else {
-                    Entry::Free {
-                        next_free: Some(i + 1),
-                    }
-                }
-            }).collect();
-        Arena {
-            items,
+        let mut arena = Arena {
+            items: Vec::new(),
             generation: 0,
-            free_list_head: Some(0),
+            free_list_head: None,
+        };
+        arena.reserve(n);
+        arena
+    }
+
+    pub fn try_insert(&mut self, value: T) -> Result<Index, T> {
+        match self.free_list_head {
+            None => Err(value),
+            Some(i) => match self.items[i] {
+                Entry::Occupied { .. } => panic!("corrupt free list"),
+                Entry::Free { next_free } => {
+                    self.free_list_head = next_free;
+                    self.items[i] = Entry::Occupied {
+                        generation: self.generation,
+                        value,
+                    };
+                    Ok(Index {
+                        index: i,
+                        generation: self.generation,
+                    })
+                }
+            },
         }
     }
 
-    pub fn insert(&mut self, value: T) -> Result<Index, T> {
-        match self.free_list_head {
-            None => Err(value),
-            Some(i) => {
-                match self.items[i] {
-                    Entry::Occupied { .. } => panic!("corrupt free list"),
-                    Entry::Free { next_free } => {
-                        self.free_list_head = next_free;
-                        self.items[i] = Entry::Occupied {
-                            generation: self.generation,
-                            value,
-                        };
-                        Ok(Index {
-                            index: i,
-                            generation: self.generation,
-                        })
-                    }
-                }
+    pub fn insert(&mut self, value: T) -> Index {
+        match self.try_insert(value) {
+            Ok(i) => i,
+            Err(value) => {
+                let len = self.items.len();
+                self.reserve(len);
+                self.try_insert(value)
+                    .map_err(|_| ())
+                    .expect("inserting will always succeed after reserving additional space")
             }
         }
     }
@@ -99,6 +108,10 @@ impl<T> Arena<T> {
                 None
             }
         }
+    }
+
+    pub fn contains(&self, i: Index) -> bool {
+        self.get(i).is_some()
     }
 
     pub fn get(&self, i: Index) -> Option<&T> {
@@ -129,5 +142,28 @@ impl<T> Arena<T> {
             }
             _ => None,
         }
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.items.len()
+    }
+
+    pub fn reserve(&mut self, additional_capacity: usize) {
+        let start = self.items.len();
+        let end = self.items.len() + additional_capacity;
+        let old_head = self.free_list_head;
+        self.items.reserve_exact(additional_capacity);
+        self.items.extend((start..end).map(|i| {
+            if i == end - 1 {
+                Entry::Free {
+                    next_free: old_head,
+                }
+            } else {
+                Entry::Free {
+                    next_free: Some(i + 1),
+                }
+            }
+        }));
+        self.free_list_head = Some(start);
     }
 }
