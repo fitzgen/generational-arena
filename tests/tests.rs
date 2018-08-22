@@ -6,7 +6,7 @@ use std::collections::BTreeSet;
 fn can_get_live_value() {
     let mut arena = Arena::with_capacity(1);
     let i = arena.try_insert(42).unwrap();
-    assert_eq!(*arena.get(i).unwrap(), 42);
+    assert_eq!(arena[i], 42);
 }
 
 #[test]
@@ -25,7 +25,7 @@ fn cannot_get_other_generation_value() {
     assert!(!arena.contains(i));
     let j = arena.try_insert(42).unwrap();
     assert!(!arena.contains(i));
-    assert_eq!(*arena.get(j).unwrap(), 42);
+    assert_eq!(arena[j], 42);
     assert!(i != j);
 }
 
@@ -58,8 +58,8 @@ fn capacity_and_reserve() {
 fn get_mut() {
     let mut arena = Arena::new();
     let idx = arena.insert(5);
-    *arena.get_mut(idx).unwrap() += 1;
-    assert_eq!(*arena.get(idx).unwrap(), 6);
+    arena[idx] += 1;
+    assert_eq!(arena[idx], 6);
 }
 
 #[test]
@@ -73,4 +73,21 @@ fn into_iter() {
     assert!(set.contains(&0));
     assert!(set.contains(&1));
     assert!(set.contains(&2));
+}
+
+#[test]
+#[should_panic]
+fn index_deleted_item() {
+    let mut arena = Arena::new();
+    let idx = arena.insert(42);
+    arena.remove(idx);
+    arena[idx];
+}
+
+#[test]
+fn out_of_bounds_index_from_other_arena() {
+    let mut arena1 = Arena::new();
+    let arena2 = Arena::<usize>::new();
+    let idx = arena1.insert(42);
+    assert!(arena2.get(idx).is_none());
 }
