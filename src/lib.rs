@@ -16,14 +16,14 @@ cfg_if! {
 
 use core::mem;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Arena<T> {
     items: Vec<Entry<T>>,
     generation: u64,
     free_list_head: Option<usize>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum Entry<T> {
     Free { next_free: Option<usize> },
     Occupied { generation: u64, value: T },
