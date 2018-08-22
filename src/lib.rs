@@ -14,7 +14,9 @@ cfg_if! {
     }
 }
 
+use core::iter;
 use core::mem;
+use core::slice;
 
 #[derive(Clone, Debug)]
 pub struct Arena<T> {
@@ -166,6 +168,18 @@ impl<T> Arena<T> {
         }));
         self.free_list_head = Some(start);
     }
+
+    pub fn iter(&self) -> Iter<T> {
+        Iter {
+            inner: self.items.iter().enumerate()
+        }
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<T> {
+        IterMut {
+            inner: self.items.iter_mut().enumerate()
+        }
+    }
 }
 
 impl<T> IntoIterator for Arena<T> {
@@ -190,6 +204,64 @@ impl<T> Iterator for IntoIter<T> {
             match self.inner.next() {
                 Some(Entry::Free { .. }) => continue,
                 Some(Entry::Occupied { value, .. }) => return Some(value),
+                None => return None,
+            }
+        }
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Arena<T> {
+    type Item = (Index, &'a T);
+    type IntoIter = Iter<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+pub struct Iter<'a, T: 'a> {
+    inner: iter::Enumerate<slice::Iter<'a, Entry<T>>>,
+}
+
+impl<'a, T> Iterator for Iter<'a, T> {
+    type Item = (Index, &'a T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next() {
+                Some((_, &Entry::Free { .. })) => continue,
+                Some((index, &Entry::Occupied { generation, ref value })) => {
+                    let idx = Index { index, generation };
+                    return Some((idx, value))
+                },
+                None => return None,
+            }
+        }
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut Arena<T> {
+    type Item = (Index, &'a mut T);
+    type IntoIter = IterMut<'a, T>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
+pub struct IterMut<'a, T: 'a> {
+    inner: iter::Enumerate<slice::IterMut<'a, Entry<T>>>,
+}
+
+impl<'a, T> Iterator for IterMut<'a, T> {
+    type Item = (Index, &'a mut T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next() {
+                Some((_, &mut Entry::Free { .. })) => continue,
+                Some((index, &mut Entry::Occupied { generation, ref mut value })) => {
+                    let idx = Index { index, generation };
+                    return Some((idx, value))
+                },
                 None => return None,
             }
         }
