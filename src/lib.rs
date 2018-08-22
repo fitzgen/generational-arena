@@ -7,10 +7,10 @@ extern crate cfg_if;
 cfg_if! {
     if #[cfg(feature = "std")] {
         extern crate std;
-        use std::vec::Vec;
+        use std::vec::{self, Vec};
     } else {
         extern crate alloc;
-        use alloc::vec::Vec;
+        use alloc::vec::{self, Vec};
     }
 }
 
@@ -165,5 +165,33 @@ impl<T> Arena<T> {
             }
         }));
         self.free_list_head = Some(start);
+    }
+}
+
+impl<T> IntoIterator for Arena<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T>;
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter {
+            inner: self.items.into_iter()
+        }
+    }
+}
+
+pub struct IntoIter<T> {
+    inner: vec::IntoIter<Entry<T>>,
+}
+
+impl<T> Iterator for IntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next() {
+                Some(Entry::Free { .. }) => continue,
+                Some(Entry::Occupied { value, .. }) => return Some(value),
+                None => return None,
+            }
+        }
     }
 }

@@ -68,5 +68,13 @@ quickcheck! {
                 assert!(!arena.contains(dead));
             }
         }
+
+        // All the remaining values are expected.
+        let remaining: Vec<_> = arena.into_iter().collect();
+        assert_eq!(remaining.len(), live_indices.len());
+        for rem in remaining {
+            let i = live_indices.iter().position(|&(_, v)| v == rem).unwrap();
+            live_indices.remove(i);
+        }
     }
 }

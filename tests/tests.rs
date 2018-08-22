@@ -1,5 +1,6 @@
 extern crate generational_arena;
 use generational_arena::Arena;
+use std::collections::BTreeSet;
 
 #[test]
 fn can_get_live_value() {
@@ -59,4 +60,17 @@ fn get_mut() {
     let idx = arena.insert(5);
     *arena.get_mut(idx).unwrap() += 1;
     assert_eq!(*arena.get(idx).unwrap(), 6);
+}
+
+#[test]
+fn into_iter() {
+    let mut arena = Arena::new();
+    arena.insert(0);
+    arena.insert(1);
+    arena.insert(2);
+    let set: BTreeSet<_> = arena.into_iter().collect();
+    assert_eq!(set.len(), 3);
+    assert!(set.contains(&0));
+    assert!(set.contains(&1));
+    assert!(set.contains(&2));
 }
