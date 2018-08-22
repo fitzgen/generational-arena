@@ -17,6 +17,12 @@ cfg-if = "0.1.5"
 
 [dev-dependencies]
 quickcheck = "0.6.2"
+criterion = "0.2"
+
+[[bench]]
+name = "benches"
+path = "benches/benches.rs"
+harness = false
 
 [features]
 default = ["std"]
