@@ -85,9 +85,19 @@ fn index_deleted_item() {
 }
 
 #[test]
-fn out_of_bounds_index_from_other_arena() {
-    let mut arena1 = Arena::new();
-    let arena2 = Arena::<usize>::new();
+fn out_of_bounds_get_with_index_from_other_arena() {
+    let mut arena1 = Arena::with_capacity(1);
+    let arena2 = Arena::<usize>::with_capacity(1);
+    arena1.insert(0);
     let idx = arena1.insert(42);
     assert!(arena2.get(idx).is_none());
+}
+
+#[test]
+fn out_of_bounds_remove_with_index_from_other_arena() {
+    let mut arena1 = Arena::with_capacity(1);
+    let mut arena2 = Arena::<usize>::with_capacity(1);
+    arena1.insert(0);
+    let idx = arena1.insert(42);
+    assert!(arena2.remove(idx).is_none());
 }

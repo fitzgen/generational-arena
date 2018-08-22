@@ -337,7 +337,10 @@ impl<T> Arena<T> {
     /// assert_eq!(arena.remove(idx), None);
     /// ```
     pub fn remove(&mut self, i: Index) -> Option<T> {
-        assert!(i.index < self.items.len());
+        if i.index >= self.items.len() {
+            return None;
+        }
+
         let entry = mem::replace(
             &mut self.items[i.index],
             Entry::Free {
