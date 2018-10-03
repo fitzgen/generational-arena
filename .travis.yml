@@ -13,12 +13,18 @@ matrix:
   include:
     - rust: stable
       env: JOB=stable-tests
-      script: cargo test
+      script:
+        - cargo test
+        - cargo test --features serde
     - rust: beta
       env: JOB=beta-tests
-      script: cargo test
+      script:
+        - cargo test
+        - cargo test --features serde
     - rust: nightly
       env: JOB=nightly-tests
       script:
         - cargo test
+        - cargo test --features serde
         - cargo test --no-default-features
+        - cargo test --no-default-features --features serde

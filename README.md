@@ -131,3 +131,12 @@ currently requires nightly Rust and `feature(alloc)` to get access to `Vec`.
 [dependencies]
 generational-arena = { version = "0.1", default-features = false }
 ```
+
+#### Serialization/deserialization
+
+To enable serialization/deserialization support, enable the "serde" feature.
+
+```toml
+[dependencies]
+generational-arena = { version = "0.1", features = ["serde"] }
+```

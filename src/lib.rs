@@ -130,6 +130,15 @@ currently requires nightly Rust and `feature(alloc)` to get access to `Vec`.
 [dependencies]
 generational-arena = { version = "0.1", default-features = false }
 ```
+
+### Serialization/deserialization
+
+To enable serialization/deserialization support, enable the "serde" feature.
+
+```toml
+[dependencies]
+generational-arena = { version = "0.1", features = ["serde"] }
+```
  */
 
 #![forbid(unsafe_code, missing_docs, missing_debug_implementations)]
@@ -138,6 +147,8 @@ generational-arena = { version = "0.1", default-features = false }
 
 #[macro_use]
 extern crate cfg_if;
+#[cfg(feature = "serde")]
+extern crate serde;
 
 cfg_if! {
     if #[cfg(feature = "std")] {
@@ -154,6 +165,9 @@ use core::iter::{self, Extend, FromIterator};
 use core::mem;
 use core::ops;
 use core::slice;
+
+#[cfg(feature = "serde")]
+mod serde_impl;
 
 /// The `Arena` allows inserting and removing elements that are referred to by
 /// `Index`.
