@@ -559,6 +559,37 @@ impl<T> Arena<T> {
             inner: self.items.iter_mut().enumerate()
         }
     }
+
+    /// Iterate over removed elements from the arena.
+    /// 
+    /// Yields pairs of `(Index, T)` items.
+    /// 
+    /// Order of iteration is not defined.
+    /// 
+    /// Note: All elements are removed even if the iterator is only partially consumed or not consumed at all.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use generational_arena::Arena;
+    /// 
+    /// let mut arena = Arena::new();
+    /// let idx_1 = arena.insert("hello");
+    /// let idx_2 = arena.insert("world");
+    ///
+    /// assert!(arena.get(idx_1).is_some());
+    /// assert!(arena.get(idx_2).is_some());
+    /// for (idx, value) in arena.drain() {
+    ///     assert!((idx == idx_1 && value == "hello") || (idx == idx_2 && value == "world"));
+    /// }
+    /// assert!(arena.get(idx_1).is_none());
+    /// assert!(arena.get(idx_2).is_none());
+    /// ```
+    pub fn drain(&mut self) -> Drain<T> {
+        Drain {
+            inner: self.items.drain(..).enumerate()
+        }
+    }
 }
 
 impl<T> IntoIterator for Arena<T> {
@@ -668,7 +699,7 @@ impl<'a, T> IntoIterator for &'a mut Arena<T> {
     }
 }
 
-/// An iterate over exclusive references to elements in this arena.
+/// An iterator over exclusive references to elements in this arena.
 ///
 /// Yields pairs of `(Index, &mut T)` items.
 ///
@@ -701,6 +732,53 @@ impl<'a, T> Iterator for IterMut<'a, T> {
             match self.inner.next() {
                 Some((_, &mut Entry::Free { .. })) => continue,
                 Some((index, &mut Entry::Occupied { generation, ref mut value })) => {
+                    let idx = Index { index, generation };
+                    return Some((idx, value))
+                },
+                None => return None,
+            }
+        }
+    }
+}
+
+/// An iterator that removes elements from the arena.
+/// 
+/// Yields pairs of `(Index, T)` items.
+/// 
+/// Order of iteration is not defined.
+/// 
+/// Note: All elements are removed even if the iterator is only partially consumed or not consumed at all.
+/// 
+/// # Examples
+/// 
+/// ```
+/// use generational_arena::Arena;
+/// 
+/// let mut arena = Arena::new();
+/// let idx_1 = arena.insert("hello");
+/// let idx_2 = arena.insert("world");
+///
+/// assert!(arena.get(idx_1).is_some());
+/// assert!(arena.get(idx_2).is_some());
+/// for (idx, value) in arena.drain() {
+///     assert!((idx == idx_1 && value == "hello") || (idx == idx_2 && value == "world"));
+/// }
+/// assert!(arena.get(idx_1).is_none());
+/// assert!(arena.get(idx_2).is_none());
+/// ```
+#[derive(Debug)]
+pub struct Drain<'a, T: 'a> {
+    inner: iter::Enumerate<vec::Drain<'a, Entry<T>>>,
+}
+
+impl<'a, T> Iterator for Drain<'a, T> {
+    type Item = (Index, T);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next() {
+                Some((_, Entry::Free { .. })) => continue,
+                Some((index, Entry::Occupied { generation, value })) => {
                     let idx = Index { index, generation };
                     return Some((idx, value))
                 },
