@@ -109,12 +109,14 @@ where
         }
 
         let mut free_list_head = None;
+        let mut len = items.len();
         // Iterates `arena.items` in reverse order so that free_list concatenates
         // indices in ascending order.
         for (idx, entry) in items.iter_mut().enumerate().rev() {
             if let Entry::Free { next_free } = entry {
                 *next_free = free_list_head;
                 free_list_head = Some(idx);
+                len -= 1;
             }
         }
 
@@ -122,6 +124,7 @@ where
             items,
             generation,
             free_list_head,
+            len,
         })
     }
 }
