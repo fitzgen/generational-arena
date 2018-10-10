@@ -101,3 +101,18 @@ fn out_of_bounds_remove_with_index_from_other_arena() {
     let idx = arena1.insert(42);
     assert!(arena2.remove(idx).is_none());
 }
+
+#[test]
+fn drain() {
+    let mut arena = Arena::new();
+    let idx_1 = arena.insert("hello");
+    let idx_2 = arena.insert("world");
+
+    assert!(arena.get(idx_1).is_some());
+    assert!(arena.get(idx_2).is_some());
+    for (idx, value) in arena.drain() {
+        assert!((idx == idx_1 && value == "hello") || (idx == idx_2 && value == "world"));
+    }
+    assert!(arena.get(idx_1).is_none());
+    assert!(arena.get(idx_2).is_none());
+}
