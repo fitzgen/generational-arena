@@ -131,7 +131,7 @@ currently requires nightly Rust and `feature(alloc)` to get access to `Vec`.
 generational-arena = { version = "0.1", default-features = false }
 ```
 
-### Serialization/deserialization
+### Serialization and Deserialization with [`serde`](https://crates.io/crates/serde)
 
 To enable serialization/deserialization support, enable the "serde" feature.
 
