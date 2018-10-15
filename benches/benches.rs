@@ -25,6 +25,12 @@ fn lookup<T>(arena: &Arena<T>, idx: Index, n: usize) {
     }
 }
 
+fn collect<T>(arena: &Arena<T>, n: usize) {
+    for _ in 0..n {
+        criterion::black_box(arena.iter().collect::<Vec<_>>());
+    }
+}
+
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench(
         "insert",
@@ -71,6 +77,36 @@ fn criterion_benchmark(c: &mut Criterion) {
                 }
                 let big_idx = big_arena.iter().map(|pair| pair.0).next().unwrap();
                 b.iter(|| lookup(&big_arena, big_idx, *n))
+            },
+            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
+        ).throughput(|n| Throughput::Elements(*n as u32)),
+    );
+
+    c.bench(
+        "collect",
+        ParameterizedBenchmark::new(
+            "collect-small",
+            |b, n| {
+                let mut small_arena = Arena::<Small>::new();
+                for _ in 0..1024 {
+                    small_arena.insert(Default::default());
+                }
+                b.iter(|| collect(&small_arena, *n))
+            },
+            (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
+        ).throughput(|n| Throughput::Elements(*n as u32)),
+    );
+
+    c.bench(
+        "collect",
+        ParameterizedBenchmark::new(
+            "collect-big",
+            |b, n| {
+                let mut big_arena = Arena::<Big>::new();
+                for _ in 0..1024 {
+                    big_arena.insert(Default::default());
+                }
+                b.iter(|| collect(&big_arena, *n))
             },
             (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
         ).throughput(|n| Throughput::Elements(*n as u32)),

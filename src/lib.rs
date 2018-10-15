@@ -161,7 +161,7 @@ cfg_if! {
 }
 
 use core::cmp;
-use core::iter::{self, Extend, FromIterator};
+use core::iter::{self, Extend, FromIterator, FusedIterator};
 use core::mem;
 use core::ops;
 use core::slice;
@@ -178,6 +178,7 @@ pub struct Arena<T> {
     items: Vec<Entry<T>>,
     generation: u64,
     free_list_head: Option<usize>,
+    len: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -248,6 +249,7 @@ impl<T> Arena<T> {
             items: Vec::new(),
             generation: 0,
             free_list_head: None,
+            len: 0,
         };
         arena.reserve(n);
         arena
@@ -287,6 +289,7 @@ impl<T> Arena<T> {
                 Entry::Occupied { .. } => panic!("corrupt free list"),
                 Entry::Free { next_free } => {
                     self.free_list_head = next_free;
+                    self.len += 1;
                     self.items[i] = Entry::Occupied {
                         generation: self.generation,
                         value,
@@ -365,6 +368,7 @@ impl<T> Arena<T> {
             Entry::Occupied { generation, value } => if generation == i.generation {
                 self.generation += 1;
                 self.free_list_head = Some(i.index);
+                self.len -= 1;
                 Some(value)
             } else {
                 self.items[i.index] = Entry::Occupied { generation, value };
@@ -459,6 +463,52 @@ impl<T> Arena<T> {
         }
     }
 
+
+    /// Get the length of this arena.
+    ///
+    /// The length is the number of elements the arena holds.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut arena = Arena::new();
+    /// assert_eq!(arena.len(), 0);
+    ///
+    /// let idx = arena.insert(42);
+    /// assert_eq!(arena.len(), 1);
+    ///
+    /// let _ = arena.insert(0);
+    /// assert_eq!(arena.len(), 2);
+    ///
+    /// assert_eq!(arena.remove(idx), Some(42));
+    /// assert_eq!(arena.len(), 1);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    /// Returns true if the arena contains no elements
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut arena = Arena::new();
+    /// assert!(arena.is_empty());
+    ///
+    /// let idx = arena.insert(42);
+    /// assert!(!arena.is_empty());
+    ///
+    /// assert_eq!(arena.remove(idx), Some(42));
+    /// assert!(arena.is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
     /// Get the capacity of this arena.
     ///
     /// The capacity is the maximum number of elements the arena can hold
@@ -544,6 +594,7 @@ impl<T> Arena<T> {
     /// ```
     pub fn iter(&self) -> Iter<T> {
         Iter {
+            len: self.len,
             inner: self.items.iter().enumerate()
         }
     }
@@ -570,6 +621,7 @@ impl<T> Arena<T> {
     /// ```
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
+            len: self.len,
             inner: self.items.iter_mut().enumerate()
         }
     }
@@ -611,6 +663,7 @@ impl<T> IntoIterator for Arena<T> {
     type IntoIter = IntoIter<T>;
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
+            len: self.len,
             inner: self.items.into_iter()
         }
     }
@@ -638,6 +691,7 @@ impl<T> IntoIterator for Arena<T> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct IntoIter<T> {
+    len: usize,
     inner: vec::IntoIter<Entry<T>>,
 }
 
@@ -648,12 +702,48 @@ impl<T> Iterator for IntoIter<T> {
         loop {
             match self.inner.next() {
                 Some(Entry::Free { .. }) => continue,
-                Some(Entry::Occupied { value, .. }) => return Some(value),
-                None => return None,
+                Some(Entry::Occupied { value, .. }) => {
+                    self.len -= 1;
+                    return Some(value)
+                },
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None
+                }
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+}
+
+impl<T> DoubleEndedIterator for IntoIter<T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next_back() {
+                Some(Entry::Free { .. }) => continue,
+                Some(Entry::Occupied { value, ..}) => {
+                    self.len -= 1;
+                    return Some(value)
+                },
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None
+                },
             }
         }
     }
 }
+
+impl<T> ExactSizeIterator for IntoIter<T> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+impl<T> FusedIterator for IntoIter<T> {}
 
 impl<'a, T> IntoIterator for &'a Arena<T> {
     type Item = (Index, &'a T);
@@ -685,6 +775,7 @@ impl<'a, T> IntoIterator for &'a Arena<T> {
 /// ```
 #[derive(Clone, Debug)]
 pub struct Iter<'a, T: 'a> {
+    len: usize,
     inner: iter::Enumerate<slice::Iter<'a, Entry<T>>>,
 }
 
@@ -696,14 +787,49 @@ impl<'a, T> Iterator for Iter<'a, T> {
             match self.inner.next() {
                 Some((_, &Entry::Free { .. })) => continue,
                 Some((index, &Entry::Occupied { generation, ref value })) => {
+                    self.len -= 1;
                     let idx = Index { index, generation };
                     return Some((idx, value))
                 },
-                None => return None,
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None
+                }
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next_back() {
+                Some((_, &Entry::Free { .. })) => continue,
+                Some((index, &Entry::Occupied { generation, ref value })) => {
+                    self.len -= 1;
+                    let idx = Index { index, generation };
+                    return Some((idx, value))
+                },
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None
+                }
             }
         }
     }
 }
+
+impl<'a, T> ExactSizeIterator for Iter<'a, T> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+impl<'a, T> FusedIterator for Iter<'a, T> {}
 
 impl<'a, T> IntoIterator for &'a mut Arena<T> {
     type Item = (Index, &'a mut T);
@@ -735,6 +861,7 @@ impl<'a, T> IntoIterator for &'a mut Arena<T> {
 /// ```
 #[derive(Debug)]
 pub struct IterMut<'a, T: 'a> {
+    len: usize,
     inner: iter::Enumerate<slice::IterMut<'a, Entry<T>>>,
 }
 
@@ -746,14 +873,50 @@ impl<'a, T> Iterator for IterMut<'a, T> {
             match self.inner.next() {
                 Some((_, &mut Entry::Free { .. })) => continue,
                 Some((index, &mut Entry::Occupied { generation, ref mut value })) => {
+                    self.len -= 1;
                     let idx = Index { index, generation };
                     return Some((idx, value))
                 },
-                None => return None,
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None
+                }
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next_back() {
+                Some((_, &mut Entry::Free { .. })) => continue,
+                Some((index, &mut Entry::Occupied { generation, ref mut value })) => {
+                    self.len -= 1;
+                    let idx = Index { index, generation };
+                    return Some((idx, value))
+                },
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None
+                }
             }
         }
     }
 }
+
+impl<'a, T> ExactSizeIterator for IterMut<'a, T> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+impl<'a, T> FusedIterator for IterMut<'a, T> {}
+
 
 /// An iterator that removes elements from the arena.
 /// 
