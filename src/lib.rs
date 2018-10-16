@@ -463,6 +463,88 @@ impl<T> Arena<T> {
         }
     }
 
+    /// Get a pair of exclusive references to the elements at index `i1` and `i2` if it is in the
+    /// arena.
+    ///
+    /// If the element at index `i1` or `i2` is not in the arena, then `None` is returned for this
+    /// element.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `i1` and `i2` are pointing to the same item of the arena.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut arena = Arena::new();
+    /// let idx1 = arena.insert(0);
+    /// let idx2 = arena.insert(1);
+    ///
+    /// {
+    ///     let (item1, item2) = arena.get2_mut(idx1, idx2);
+    ///
+    ///     *item1.unwrap() = 3;
+    ///     *item2.unwrap() = 4;
+    /// }
+    ///
+    /// assert_eq!(arena[idx1], 3);
+    /// assert_eq!(arena[idx2], 4);
+    /// ```
+    pub fn get2_mut(&mut self, i1: Index, i2: Index) -> (Option<&mut T>, Option<&mut T>) {
+        let len = self.items.len();
+
+        if i1.index == i2.index {
+            assert!(i1.generation != i2.generation);
+
+            if i1.generation > i2.generation {
+                return (self.get_mut(i1), None);
+            }
+            return (None, self.get_mut(i2));
+        }
+
+        if i1.index >= len {
+            return (None, self.get_mut(i2));
+        } else if i2.index >= len {
+            return (self.get_mut(i1), None);
+        }
+
+        let (raw_item1, raw_item2) = {
+            let (xs, ys) = self.items.split_at_mut(cmp::max(i1.index, i2.index));
+            if i1.index < i2.index {
+                (&mut xs[i1.index], &mut ys[0])
+            } else {
+                (&mut ys[0], &mut xs[i2.index])
+            }
+        };
+
+        let item1 = match raw_item1 {
+            Entry::Occupied {
+                generation,
+                ref mut value,
+            }
+                if *generation == i1.generation =>
+            {
+                Some(value)
+            }
+            _ => None,
+        };
+
+        let item2 = match raw_item2 {
+            Entry::Occupied {
+                generation,
+                ref mut value,
+            }
+                if *generation == i2.generation =>
+            {
+                Some(value)
+            }
+            _ => None,
+        };
+
+        (item1, item2)
+    }
 
     /// Get the length of this arena.
     ///
