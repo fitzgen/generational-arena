@@ -626,7 +626,7 @@ impl<T> Arena<T> {
         }
     }
 
-    /// Iterate over removed elements from the arena.
+    /// Iterate over elements of the arena and remove them.
     /// 
     /// Yields pairs of `(Index, T)` items.
     /// 
