@@ -63,6 +63,33 @@ fn get_mut() {
 }
 
 #[test]
+fn get2_mut() {
+    let mut arena = Arena::with_capacity(2);
+    let idx1 = arena.insert(0);
+    let idx2 = arena.insert(1);
+    {
+        let (item1, item2) = arena.get2_mut(idx1, idx2);
+        assert_eq!(item1, Some(&mut 0));
+        assert_eq!(item2, Some(&mut 1));
+        *item1.unwrap() = 3;
+        *item2.unwrap() = 4;
+    }
+    assert_eq!(arena[idx1], 3);
+    assert_eq!(arena[idx2], 4);
+}
+
+#[test]
+fn get2_mut_with_same_index_but_different_generation() {
+    let mut arena = Arena::with_capacity(2);
+    let idx1 = arena.insert(0);
+    arena.remove(idx1);
+    let idx2 = arena.insert(1);
+    let (item1, item2) = arena.get2_mut(idx1, idx2);
+    assert_eq!(item1, None);
+    assert_eq!(item2, Some(&mut 1));
+}
+
+#[test]
 fn into_iter() {
     let mut arena = Arena::new();
     arena.insert(0);
@@ -100,6 +127,17 @@ fn out_of_bounds_remove_with_index_from_other_arena() {
     arena1.insert(0);
     let idx = arena1.insert(42);
     assert!(arena2.remove(idx).is_none());
+}
+
+#[test]
+fn out_of_bounds_get2_mut_with_index_from_other_arena() {
+    let mut arena1 = Arena::with_capacity(1);
+    let mut arena2 = Arena::with_capacity(2);
+    let idx1 = arena1.insert(42);
+    arena2.insert(0);
+    let idx2 = arena2.insert(0);
+
+    assert_eq!(arena1.get2_mut(idx1, idx2), (Some(&mut 42), None));
 }
 
 #[test]
