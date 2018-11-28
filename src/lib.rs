@@ -128,7 +128,7 @@ currently requires nightly Rust and `feature(alloc)` to get access to `Vec`.
 
 ```toml
 [dependencies]
-generational-arena = { version = "0.1", default-features = false }
+generational-arena = { version = "0.2", default-features = false }
 ```
 
 ### Serialization and Deserialization with [`serde`](https://crates.io/crates/serde)
@@ -137,7 +137,7 @@ To enable serialization/deserialization support, enable the "serde" feature.
 
 ```toml
 [dependencies]
-generational-arena = { version = "0.1", features = ["serde"] }
+generational-arena = { version = "0.2", features = ["serde"] }
 ```
  */
 
@@ -743,18 +743,18 @@ impl<T> Arena<T> {
     }
 
     /// Iterate over elements of the arena and remove them.
-    /// 
+    ///
     /// Yields pairs of `(Index, T)` items.
-    /// 
+    ///
     /// Order of iteration is not defined.
-    /// 
+    ///
     /// Note: All elements are removed even if the iterator is only partially consumed or not consumed at all.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use generational_arena::Arena;
-    /// 
+    ///
     /// let mut arena = Arena::new();
     /// let idx_1 = arena.insert("hello");
     /// let idx_2 = arena.insert("world");
@@ -1035,18 +1035,18 @@ impl<'a, T> FusedIterator for IterMut<'a, T> {}
 
 
 /// An iterator that removes elements from the arena.
-/// 
+///
 /// Yields pairs of `(Index, T)` items.
-/// 
+///
 /// Order of iteration is not defined.
-/// 
+///
 /// Note: All elements are removed even if the iterator is only partially consumed or not consumed at all.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// use generational_arena::Arena;
-/// 
+///
 /// let mut arena = Arena::new();
 /// let idx_1 = arena.insert("hello");
 /// let idx_2 = arena.insert("world");
