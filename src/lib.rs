@@ -255,6 +255,40 @@ impl<T> Arena<T> {
         arena
     }
 
+    /// Clear all the items inside the arena, but keep its allocation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut arena = Arena::with_capacity(1);
+    /// arena.insert(42);
+    /// arena.insert(43);
+    ///
+    /// arena.clear();
+    ///
+    /// assert_eq!(arena.capacity(), 2);
+    /// ```
+    pub fn clear(&mut self) {
+        self.items.clear();
+
+        let end = self.items.capacity();
+        self.items.extend((0..end).map(|i| {
+            if i == end - 1 {
+                Entry::Free {
+                    next_free: None,
+                }
+            } else {
+                Entry::Free {
+                    next_free: Some(i + 1),
+                }
+            }
+        }));
+        self.free_list_head = Some(0);
+        self.len = 0;
+    }
+
     /// Attempts to insert `value` into the arena using existing capacity.
     ///
     /// This method will never allocate new capacity in the arena.

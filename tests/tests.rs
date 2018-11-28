@@ -154,3 +154,30 @@ fn drain() {
     assert!(arena.get(idx_1).is_none());
     assert!(arena.get(idx_2).is_none());
 }
+
+#[test]
+fn clear() {
+    let mut arena = Arena::with_capacity(1);
+    arena.insert(42);
+    arena.insert(43);
+
+    assert_eq!(arena.capacity(), 2);
+    assert_eq!(arena.len(), 2);
+
+    arena.clear();
+
+    assert_eq!(arena.capacity(), 2);
+    assert_eq!(arena.len(), 0);
+
+    arena.insert(44);
+    arena.insert(45);
+    arena.insert(46);
+
+    assert_eq!(arena.capacity(), 4);
+    assert_eq!(arena.len(), 3);
+
+    arena.clear();
+
+    assert_eq!(arena.capacity(), 4);
+    assert_eq!(arena.len(), 0);
+}
