@@ -1105,12 +1105,12 @@ impl<T> ops::Index<Index> for Arena<T> {
     type Output = T;
 
     fn index(&self, index: Index) -> &Self::Output {
-        self.get(index).unwrap()
+        self.get(index).expect("No element at index")
     }
 }
 
 impl<T> ops::IndexMut<Index> for Arena<T> {
     fn index_mut(&mut self, index: Index) -> &mut Self::Output {
-        self.get_mut(index).unwrap()
+        self.get_mut(index).expect("No element at index")
     }
 }
