@@ -1,3 +1,10 @@
+# 0.2.1
+
+Released 2019-01-22.
+
+* Bad indexing into an arena will now panic with a message explaining what
+  happened instead of the generic unwrap panic message.
+
 # 0.2.0
 
 Released 2018-11-28.
