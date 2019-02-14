@@ -165,6 +165,7 @@ use core::iter::{self, Extend, FromIterator, FusedIterator};
 use core::mem;
 use core::ops;
 use core::slice;
+use core::num::NonZeroU64;
 
 #[cfg(feature = "serde")]
 mod serde_impl;
@@ -176,7 +177,7 @@ mod serde_impl;
 #[derive(Clone, Debug)]
 pub struct Arena<T> {
     items: Vec<Entry<T>>,
-    generation: u64,
+    generation: NonZeroU64,
     free_list_head: Option<usize>,
     len: usize,
 }
@@ -184,7 +185,7 @@ pub struct Arena<T> {
 #[derive(Clone, Debug)]
 enum Entry<T> {
     Free { next_free: Option<usize> },
-    Occupied { generation: u64, value: T },
+    Occupied { generation: NonZeroU64, value: T },
 }
 
 /// An index (and generation) into an `Arena`.
@@ -204,7 +205,7 @@ enum Entry<T> {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Index {
     index: usize,
-    generation: u64,
+    generation: NonZeroU64,
 }
 
 const DEFAULT_CAPACITY: usize = 4;
@@ -247,7 +248,7 @@ impl<T> Arena<T> {
         let n = cmp::max(n, 1);
         let mut arena = Arena {
             items: Vec::new(),
-            generation: 0,
+            generation: NonZeroU64::new(1).expect("1 as NonZeroU64"),
             free_list_head: None,
             len: 0,
         };
@@ -400,7 +401,8 @@ impl<T> Arena<T> {
         );
         match entry {
             Entry::Occupied { generation, value } => if generation == i.generation {
-                self.generation += 1;
+                self.generation = NonZeroU64::new(self.generation.get() + 1)
+                    .expect("generation incremented by 1");
                 self.free_list_head = Some(i.index);
                 self.len -= 1;
                 Some(value)
