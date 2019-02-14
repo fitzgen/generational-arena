@@ -3,6 +3,7 @@ use core::cmp;
 use core::fmt;
 use core::iter;
 use core::marker::PhantomData;
+use core::num::NonZeroU64;
 use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, Serializer};
 
@@ -85,8 +86,8 @@ where
         let init_cap = access.size_hint().unwrap_or(DEFAULT_CAPACITY);
         let mut items = Vec::with_capacity(init_cap);
 
-        let mut generation = 0;
-        while let Some(element) = access.next_element::<Option<(u64, T)>>()? {
+        let mut generation = NonZeroU64::new(1).expect("1 as NonZeroU64");
+        while let Some(element) = access.next_element::<Option<(NonZeroU64, T)>>()? {
             let item = match element {
                 Some((gen, value)) => {
                     generation = cmp::max(generation, gen);

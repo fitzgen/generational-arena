@@ -128,7 +128,7 @@ fn fully_occupied_arena_can_be_serialized_and_deserialized() {
         tokens.extend(&[
             Token::Some,
             Token::Tuple { len: 2 },
-            Token::U64(0),
+            Token::U64(1),
             Token::U64((i * i) as u64),
             Token::TupleEnd,
         ]);

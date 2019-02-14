@@ -162,10 +162,10 @@ cfg_if! {
 
 use core::cmp;
 use core::iter::{self, Extend, FromIterator, FusedIterator};
+use core::num::NonZeroU64;
 use core::mem;
 use core::ops;
 use core::slice;
-use core::num::NonZeroU64;
 
 #[cfg(feature = "serde")]
 mod serde_impl;
