@@ -137,6 +137,13 @@ fn fully_occupied_arena_can_be_serialized_and_deserialized() {
     assert_tokens(&arena, &tokens);
 }
 
+#[test]
+fn zero_generation_index_cannot_be_deserialized() {
+    let fake_index = (0, 0);
+    let serialized_fake_index = bincode::serialize(&fake_index).expect("fake_index must be serialized");
+    assert!(bincode::deserialize::<Index>(&serialized_fake_index).is_err());
+}
+
 /// Arena wrapper struct for comparing two arenas
 ///
 /// `serde_test::assert_tokens` requires the value implements `PartialEq`,
