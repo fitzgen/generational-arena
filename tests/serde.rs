@@ -128,13 +128,20 @@ fn fully_occupied_arena_can_be_serialized_and_deserialized() {
         tokens.extend(&[
             Token::Some,
             Token::Tuple { len: 2 },
-            Token::U64(0),
+            Token::U64(1),
             Token::U64((i * i) as u64),
             Token::TupleEnd,
         ]);
     }
     tokens.push(Token::SeqEnd);
     assert_tokens(&arena, &tokens);
+}
+
+#[test]
+fn zero_generation_index_cannot_be_deserialized() {
+    let fake_index = (0, 0);
+    let serialized_fake_index = bincode::serialize(&fake_index).expect("fake_index must be serialized");
+    assert!(bincode::deserialize::<Index>(&serialized_fake_index).is_err());
 }
 
 /// Arena wrapper struct for comparing two arenas
