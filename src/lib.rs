@@ -181,10 +181,39 @@ pub struct Arena<T> {
     len: usize,
 }
 
+impl<T: Eq> Eq for Arena<T> {}
+
+impl<T: PartialEq> PartialEq for Arena<T> {
+    fn eq(&self, other: &Arena<T>) -> bool {
+        self.items == other.items && self.generation == other.generation
+    }
+}
+
 #[derive(Clone, Debug)]
 enum Entry<T> {
     Free { next_free: Option<usize> },
     Occupied { generation: u64, value: T },
+}
+
+impl<T: PartialEq> PartialEq for Entry<T> {
+    fn eq(&self, other: &Entry<T>) -> bool {
+        match self {
+            Entry::Free { next_free:self_next_free } => {
+                match other {
+                    Entry::Free { next_free:other_next_free }
+                    => self_next_free == other_next_free,
+                    _ => false
+                }
+            }
+            Entry::Occupied { generation:self_generation, value:self_value } => {
+                match other {
+                    Entry::Occupied { generation:other_generation, value: other_value }
+                    => self_generation == other_generation && self_value == other_value,
+                    _ => false
+                }
+            }
+        }
+    }
 }
 
 /// An index (and generation) into an `Arena`.
@@ -368,7 +397,6 @@ impl<T> Arena<T> {
         self.try_insert(value)
             .map_err(|_| ())
             .expect("inserting will always succeed after reserving additional space")
-
     }
 
     /// Remove the element at index `i` from the arena.
@@ -455,13 +483,13 @@ impl<T> Arena<T> {
     pub fn get(&self, i: Index) -> Option<&T> {
         match self.items.get(i.index) {
             Some(Entry::Occupied {
-                generation,
-                ref value,
-            })
-                if *generation == i.generation =>
-            {
-                Some(value)
-            }
+                     generation,
+                     ref value,
+                 })
+            if *generation == i.generation =>
+                {
+                    Some(value)
+                }
             _ => None,
         }
     }
@@ -486,13 +514,13 @@ impl<T> Arena<T> {
     pub fn get_mut(&mut self, i: Index) -> Option<&mut T> {
         match self.items.get_mut(i.index) {
             Some(Entry::Occupied {
-                generation,
-                ref mut value,
-            })
-                if *generation == i.generation =>
-            {
-                Some(value)
-            }
+                     generation,
+                     ref mut value,
+                 })
+            if *generation == i.generation =>
+                {
+                    Some(value)
+                }
             _ => None,
         }
     }
@@ -558,10 +586,10 @@ impl<T> Arena<T> {
                 generation,
                 ref mut value,
             }
-                if *generation == i1.generation =>
-            {
-                Some(value)
-            }
+            if *generation == i1.generation =>
+                {
+                    Some(value)
+                }
             _ => None,
         };
 
@@ -570,10 +598,10 @@ impl<T> Arena<T> {
                 generation,
                 ref mut value,
             }
-                if *generation == i2.generation =>
-            {
-                Some(value)
-            }
+            if *generation == i2.generation =>
+                {
+                    Some(value)
+                }
             _ => None,
         };
 
@@ -711,7 +739,7 @@ impl<T> Arena<T> {
     pub fn iter(&self) -> Iter<T> {
         Iter {
             len: self.len,
-            inner: self.items.iter().enumerate()
+            inner: self.items.iter().enumerate(),
         }
     }
 
@@ -738,7 +766,7 @@ impl<T> Arena<T> {
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
             len: self.len,
-            inner: self.items.iter_mut().enumerate()
+            inner: self.items.iter_mut().enumerate(),
         }
     }
 
@@ -840,7 +868,7 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
         loop {
             match self.inner.next_back() {
                 Some(Entry::Free { .. }) => continue,
-                Some(Entry::Occupied { value, ..}) => {
+                Some(Entry::Occupied { value, .. }) => {
                     self.len -= 1;
                     return Some(value)
                 },
