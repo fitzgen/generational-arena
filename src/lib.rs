@@ -415,6 +415,40 @@ impl<T> Arena<T> {
         }
     }
 
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all indices such that `predicate(index, &value)` returns `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut crew = Arena::new();
+    /// crew.extend(&["Jim Hawkins", "John Silver", "Alexander Smollett", "Israel Hands"]);
+    /// let pirates = ["John Silver", "Israel Hands"]; // too dangerous to keep them around
+    /// crew.retain(|_index, member| !pirates.contains(member));
+    /// let mut crew_members = crew.iter().map(|(_, member)| **member);
+    /// assert_eq!(crew_members.next(), Some("Jim Hawkins"));
+    /// assert_eq!(crew_members.next(), Some("Alexander Smollett"));
+    /// assert!(crew_members.next().is_none());
+    /// ```
+    pub fn retain(&mut self, mut predicate: impl FnMut(Index, &T) -> bool) {
+        for i in 0..self.len {
+            let remove = match &self.items[i] {
+                Entry::Occupied { generation, value } => {
+                    let index = Index { index: i, generation: *generation };
+                    if predicate(index, value) { None } else { Some(index) }
+                }
+
+                _ => None,
+            };
+            if let Some(index) = remove {
+                self.remove(index);
+            }
+        }
+    }
+
     /// Is the element at index `i` in the arena?
     ///
     /// Returns `true` if the element at `i` is in the arena, `false` otherwise.
