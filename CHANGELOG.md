@@ -1,3 +1,9 @@
+# 0.2.2
+
+Released 2019-03-12.
+
+* Add a `retain` method analogous to `Vec::retain`.
+
 # 0.2.1
 
 Released 2019-01-22.
