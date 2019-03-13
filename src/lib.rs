@@ -276,9 +276,7 @@ impl<T> Arena<T> {
         let end = self.items.capacity();
         self.items.extend((0..end).map(|i| {
             if i == end - 1 {
-                Entry::Free {
-                    next_free: None,
-                }
+                Entry::Free { next_free: None }
             } else {
                 Entry::Free {
                     next_free: Some(i + 1),
@@ -355,9 +353,7 @@ impl<T> Arena<T> {
     pub fn insert(&mut self, value: T) -> Index {
         match self.try_insert(value) {
             Ok(i) => i,
-            Err(value) => {
-                self.insert_slow_path(value)
-            }
+            Err(value) => self.insert_slow_path(value),
         }
     }
 
@@ -368,7 +364,6 @@ impl<T> Arena<T> {
         self.try_insert(value)
             .map_err(|_| ())
             .expect("inserting will always succeed after reserving additional space")
-
     }
 
     /// Remove the element at index `i` from the arena.
@@ -399,15 +394,17 @@ impl<T> Arena<T> {
             },
         );
         match entry {
-            Entry::Occupied { generation, value } => if generation == i.generation {
-                self.generation += 1;
-                self.free_list_head = Some(i.index);
-                self.len -= 1;
-                Some(value)
-            } else {
-                self.items[i.index] = Entry::Occupied { generation, value };
-                None
-            },
+            Entry::Occupied { generation, value } => {
+                if generation == i.generation {
+                    self.generation += 1;
+                    self.free_list_head = Some(i.index);
+                    self.len -= 1;
+                    Some(value)
+                } else {
+                    self.items[i.index] = Entry::Occupied { generation, value };
+                    None
+                }
+            }
             e @ Entry::Free { .. } => {
                 self.items[i.index] = e;
                 None
@@ -437,8 +434,15 @@ impl<T> Arena<T> {
         for i in 0..self.len {
             let remove = match &self.items[i] {
                 Entry::Occupied { generation, value } => {
-                    let index = Index { index: i, generation: *generation };
-                    if predicate(index, value) { None } else { Some(index) }
+                    let index = Index {
+                        index: i,
+                        generation: *generation,
+                    };
+                    if predicate(index, value) {
+                        None
+                    } else {
+                        Some(index)
+                    }
                 }
 
                 _ => None,
@@ -491,11 +495,7 @@ impl<T> Arena<T> {
             Some(Entry::Occupied {
                 generation,
                 ref value,
-            })
-                if *generation == i.generation =>
-            {
-                Some(value)
-            }
+            }) if *generation == i.generation => Some(value),
             _ => None,
         }
     }
@@ -522,11 +522,7 @@ impl<T> Arena<T> {
             Some(Entry::Occupied {
                 generation,
                 ref mut value,
-            })
-                if *generation == i.generation =>
-            {
-                Some(value)
-            }
+            }) if *generation == i.generation => Some(value),
             _ => None,
         }
     }
@@ -591,11 +587,7 @@ impl<T> Arena<T> {
             Entry::Occupied {
                 generation,
                 ref mut value,
-            }
-                if *generation == i1.generation =>
-            {
-                Some(value)
-            }
+            } if *generation == i1.generation => Some(value),
             _ => None,
         };
 
@@ -603,11 +595,7 @@ impl<T> Arena<T> {
             Entry::Occupied {
                 generation,
                 ref mut value,
-            }
-                if *generation == i2.generation =>
-            {
-                Some(value)
-            }
+            } if *generation == i2.generation => Some(value),
             _ => None,
         };
 
@@ -745,7 +733,7 @@ impl<T> Arena<T> {
     pub fn iter(&self) -> Iter<T> {
         Iter {
             len: self.len,
-            inner: self.items.iter().enumerate()
+            inner: self.items.iter().enumerate(),
         }
     }
 
@@ -772,7 +760,7 @@ impl<T> Arena<T> {
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
             len: self.len,
-            inner: self.items.iter_mut().enumerate()
+            inner: self.items.iter_mut().enumerate(),
         }
     }
 
@@ -803,7 +791,7 @@ impl<T> Arena<T> {
     /// ```
     pub fn drain(&mut self) -> Drain<T> {
         Drain {
-            inner: self.items.drain(..).enumerate()
+            inner: self.items.drain(..).enumerate(),
         }
     }
 }
@@ -814,7 +802,7 @@ impl<T> IntoIterator for Arena<T> {
     fn into_iter(self) -> Self::IntoIter {
         IntoIter {
             len: self.len,
-            inner: self.items.into_iter()
+            inner: self.items.into_iter(),
         }
     }
 }
@@ -854,11 +842,11 @@ impl<T> Iterator for IntoIter<T> {
                 Some(Entry::Free { .. }) => continue,
                 Some(Entry::Occupied { value, .. }) => {
                     self.len -= 1;
-                    return Some(value)
-                },
+                    return Some(value);
+                }
                 None => {
                     debug_assert_eq!(self.len, 0);
-                    return None
+                    return None;
                 }
             }
         }
@@ -874,14 +862,14 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
         loop {
             match self.inner.next_back() {
                 Some(Entry::Free { .. }) => continue,
-                Some(Entry::Occupied { value, ..}) => {
+                Some(Entry::Occupied { value, .. }) => {
                     self.len -= 1;
-                    return Some(value)
-                },
+                    return Some(value);
+                }
                 None => {
                     debug_assert_eq!(self.len, 0);
-                    return None
-                },
+                    return None;
+                }
             }
         }
     }
@@ -936,14 +924,20 @@ impl<'a, T> Iterator for Iter<'a, T> {
         loop {
             match self.inner.next() {
                 Some((_, &Entry::Free { .. })) => continue,
-                Some((index, &Entry::Occupied { generation, ref value })) => {
+                Some((
+                    index,
+                    &Entry::Occupied {
+                        generation,
+                        ref value,
+                    },
+                )) => {
                     self.len -= 1;
                     let idx = Index { index, generation };
-                    return Some((idx, value))
-                },
+                    return Some((idx, value));
+                }
                 None => {
                     debug_assert_eq!(self.len, 0);
-                    return None
+                    return None;
                 }
             }
         }
@@ -959,14 +953,20 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
         loop {
             match self.inner.next_back() {
                 Some((_, &Entry::Free { .. })) => continue,
-                Some((index, &Entry::Occupied { generation, ref value })) => {
+                Some((
+                    index,
+                    &Entry::Occupied {
+                        generation,
+                        ref value,
+                    },
+                )) => {
                     self.len -= 1;
                     let idx = Index { index, generation };
-                    return Some((idx, value))
-                },
+                    return Some((idx, value));
+                }
                 None => {
                     debug_assert_eq!(self.len, 0);
-                    return None
+                    return None;
                 }
             }
         }
@@ -1022,14 +1022,20 @@ impl<'a, T> Iterator for IterMut<'a, T> {
         loop {
             match self.inner.next() {
                 Some((_, &mut Entry::Free { .. })) => continue,
-                Some((index, &mut Entry::Occupied { generation, ref mut value })) => {
+                Some((
+                    index,
+                    &mut Entry::Occupied {
+                        generation,
+                        ref mut value,
+                    },
+                )) => {
                     self.len -= 1;
                     let idx = Index { index, generation };
-                    return Some((idx, value))
-                },
+                    return Some((idx, value));
+                }
                 None => {
                     debug_assert_eq!(self.len, 0);
-                    return None
+                    return None;
                 }
             }
         }
@@ -1045,14 +1051,20 @@ impl<'a, T> DoubleEndedIterator for IterMut<'a, T> {
         loop {
             match self.inner.next_back() {
                 Some((_, &mut Entry::Free { .. })) => continue,
-                Some((index, &mut Entry::Occupied { generation, ref mut value })) => {
+                Some((
+                    index,
+                    &mut Entry::Occupied {
+                        generation,
+                        ref mut value,
+                    },
+                )) => {
                     self.len -= 1;
                     let idx = Index { index, generation };
-                    return Some((idx, value))
-                },
+                    return Some((idx, value));
+                }
                 None => {
                     debug_assert_eq!(self.len, 0);
-                    return None
+                    return None;
                 }
             }
         }
@@ -1066,7 +1078,6 @@ impl<'a, T> ExactSizeIterator for IterMut<'a, T> {
 }
 
 impl<'a, T> FusedIterator for IterMut<'a, T> {}
-
 
 /// An iterator that removes elements from the arena.
 ///
@@ -1107,8 +1118,8 @@ impl<'a, T> Iterator for Drain<'a, T> {
                 Some((_, Entry::Free { .. })) => continue,
                 Some((index, Entry::Occupied { generation, value })) => {
                     let idx = Index { index, generation };
-                    return Some((idx, value))
-                },
+                    return Some((idx, value));
+                }
                 None => return None,
             }
         }
@@ -1116,7 +1127,7 @@ impl<'a, T> Iterator for Drain<'a, T> {
 }
 
 impl<T> Extend<T> for Arena<T> {
-    fn extend<I: IntoIterator<Item=T>>(&mut self, iter: I) {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         for t in iter {
             self.insert(t);
         }
@@ -1124,7 +1135,7 @@ impl<T> Extend<T> for Arena<T> {
 }
 
 impl<T> FromIterator<T> for Arena<T> {
-    fn from_iter<I: IntoIterator<Item=T>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         let iter = iter.into_iter();
         let (lower, upper) = iter.size_hint();
         let cap = upper.unwrap_or(lower);

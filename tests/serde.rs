@@ -63,7 +63,9 @@ fn sparse_deserialized_arena_can_use_whole_elements_in_free_list() {
     seq[8] = Some((10, "foo"));
     seq[45] = Some((80, "bar"));
     seq[99] = Some((123, "baz"));
-    let mut tokens = vec![Token::Seq { len: Some(capacity) }];
+    let mut tokens = vec![Token::Seq {
+        len: Some(capacity),
+    }];
     for i in 0..capacity {
         match i {
             8 => {
