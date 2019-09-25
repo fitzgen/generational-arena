@@ -3,6 +3,15 @@ use generational_arena::Arena;
 use std::collections::BTreeSet;
 
 #[test]
+fn can_decompose_index() {
+    let mut arena = Arena::with_capacity(1);
+    let i = arena.try_insert(42).unwrap();
+    let(k, g) = i.into_raw_parts();
+    let generated_i = generational_arena::Index::from_raw_parts(k, g);
+    assert_eq!(arena[generated_i], 42);
+}
+
+#[test]
 fn can_get_live_value() {
     let mut arena = Arena::with_capacity(1);
     let i = arena.try_insert(42).unwrap();
