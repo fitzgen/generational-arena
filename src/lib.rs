@@ -209,13 +209,26 @@ pub struct Index {
 
 impl Index {
     /// Create a new `Index` from its raw parts.
-    /// This function is unsafe because generates a wrong `Index` and use it cause panics.
-    pub fn from_raw_parts(index: usize, generation: u64) -> Index {
-        Index { index, generation }
+    ///
+    /// The parts must have been returned from an earlier call to
+    /// `into_raw_parts`.
+    ///
+    /// Providing arbitrary values will lead to malformed indices and ultimately
+    /// panics.
+    pub fn from_raw_parts(a: usize, b: u64) -> Index {
+        Index {
+            index: a,
+            generation: b,
+        }
     }
 
-    /// Returns the raw parts of the `Index`.
-    /// This function is useful to make this `Index` opaque.
+    /// Convert this `Index` into its raw parts.
+    ///
+    /// This niche method is useful for converting an `Index` into another
+    /// identifier type. Usually, you should prefer a newtype wrapper around
+    /// `Index` like `pub struct MyIdentifier(Index);`.  However, for external
+    /// types whose definition you can't customize, but which you can construct
+    /// instances of, this method can be useful.
     pub fn into_raw_parts(self) -> (usize, u64) {
         (self.index, self.generation)
     }
