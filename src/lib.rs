@@ -207,6 +207,20 @@ pub struct Index {
     generation: u64,
 }
 
+impl Index {
+    /// Create a new `Index` from its raw parts.
+    /// This function is unsafe because generates a wrong `Index` and use it cause panics.
+    pub fn from_raw_parts(index: usize, generation: u64) -> Index {
+        Index { index, generation }
+    }
+
+    /// Returns the raw parts of the `Index`.
+    /// This function is useful to make this `Index` opaque.
+    pub fn into_raw_parts(self) -> (usize, u64) {
+        (self.index, self.generation)
+    }
+}
+
 const DEFAULT_CAPACITY: usize = 4;
 
 impl<T> Arena<T> {
