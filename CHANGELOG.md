@@ -1,3 +1,9 @@
+# 0.2.3
+
+Released 2019-09-25.
+
+* Add methods for converting `Index` into and from its raw parts.
+
 # 0.2.2
 
 Released 2019-03-12.
