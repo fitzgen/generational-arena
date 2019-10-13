@@ -409,28 +409,22 @@ impl<T> Arena<T> {
             return None;
         }
 
-        let entry = mem::replace(
-            &mut self.items[i.index],
-            Entry::Free {
-                next_free: self.free_list_head,
-            },
-        );
-        match entry {
-            Entry::Occupied { generation, value } => {
-                if generation == i.generation {
-                    self.generation += 1;
-                    self.free_list_head = Some(i.index);
-                    self.len -= 1;
-                    Some(value)
-                } else {
-                    self.items[i.index] = Entry::Occupied { generation, value };
-                    None
+        match self.items[i.index] {
+            Entry::Occupied { generation, .. } if i.generation == generation => {
+                let entry = mem::replace(
+                    &mut self.items[i.index],
+                    Entry::Free { next_free: self.free_list_head },
+                );
+                self.generation += 1;
+                self.free_list_head = Some(i.index);
+                self.len -= 1;
+
+                match entry {
+                    Entry::Occupied { generation: _, value } => Some(value),
+                    _ => unreachable!(),
                 }
             }
-            e @ Entry::Free { .. } => {
-                self.items[i.index] = e;
-                None
-            }
+            _ => None,
         }
     }
 
