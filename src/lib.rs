@@ -145,12 +145,7 @@ generational-arena = { version = "0.2", features = ["serde"] }
 #![no_std]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 
-#[macro_use]
-extern crate cfg_if;
-#[cfg(feature = "serde")]
-extern crate serde;
-
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
         extern crate std;
         use std::vec::{self, Vec};
@@ -521,7 +516,7 @@ impl<T> Arena<T> {
         match self.items.get(i.index) {
             Some(Entry::Occupied {
                 generation,
-                ref value,
+                value,
             }) if *generation == i.generation => Some(value),
             _ => None,
         }
@@ -548,7 +543,7 @@ impl<T> Arena<T> {
         match self.items.get_mut(i.index) {
             Some(Entry::Occupied {
                 generation,
-                ref mut value,
+                value,
             }) if *generation == i.generation => Some(value),
             _ => None,
         }
@@ -613,7 +608,7 @@ impl<T> Arena<T> {
         let item1 = match raw_item1 {
             Entry::Occupied {
                 generation,
-                ref mut value,
+                value,
             } if *generation == i1.generation => Some(value),
             _ => None,
         };
@@ -621,7 +616,7 @@ impl<T> Arena<T> {
         let item2 = match raw_item2 {
             Entry::Occupied {
                 generation,
-                ref mut value,
+                value,
             } if *generation == i2.generation => Some(value),
             _ => None,
         };
