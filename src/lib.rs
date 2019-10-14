@@ -145,12 +145,7 @@ generational-arena = { version = "0.2", features = ["serde"] }
 #![no_std]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 
-#[macro_use]
-extern crate cfg_if;
-#[cfg(feature = "serde")]
-extern crate serde;
-
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
         extern crate std;
         use std::vec::{self, Vec};
@@ -414,28 +409,22 @@ impl<T> Arena<T> {
             return None;
         }
 
-        let entry = mem::replace(
-            &mut self.items[i.index],
-            Entry::Free {
-                next_free: self.free_list_head,
-            },
-        );
-        match entry {
-            Entry::Occupied { generation, value } => {
-                if generation == i.generation {
-                    self.generation += 1;
-                    self.free_list_head = Some(i.index);
-                    self.len -= 1;
-                    Some(value)
-                } else {
-                    self.items[i.index] = Entry::Occupied { generation, value };
-                    None
+        match self.items[i.index] {
+            Entry::Occupied { generation, .. } if i.generation == generation => {
+                let entry = mem::replace(
+                    &mut self.items[i.index],
+                    Entry::Free { next_free: self.free_list_head },
+                );
+                self.generation += 1;
+                self.free_list_head = Some(i.index);
+                self.len -= 1;
+
+                match entry {
+                    Entry::Occupied { generation: _, value } => Some(value),
+                    _ => unreachable!(),
                 }
             }
-            e @ Entry::Free { .. } => {
-                self.items[i.index] = e;
-                None
-            }
+            _ => None,
         }
     }
 
@@ -521,7 +510,7 @@ impl<T> Arena<T> {
         match self.items.get(i.index) {
             Some(Entry::Occupied {
                 generation,
-                ref value,
+                value,
             }) if *generation == i.generation => Some(value),
             _ => None,
         }
@@ -548,7 +537,7 @@ impl<T> Arena<T> {
         match self.items.get_mut(i.index) {
             Some(Entry::Occupied {
                 generation,
-                ref mut value,
+                value,
             }) if *generation == i.generation => Some(value),
             _ => None,
         }
@@ -613,7 +602,7 @@ impl<T> Arena<T> {
         let item1 = match raw_item1 {
             Entry::Occupied {
                 generation,
-                ref mut value,
+                value,
             } if *generation == i1.generation => Some(value),
             _ => None,
         };
@@ -621,7 +610,7 @@ impl<T> Arena<T> {
         let item2 = match raw_item2 {
             Entry::Occupied {
                 generation,
-                ref mut value,
+                value,
             } if *generation == i2.generation => Some(value),
             _ => None,
         };

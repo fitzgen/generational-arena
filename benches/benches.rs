@@ -39,7 +39,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             |b, n| b.iter(|| insert::<Small>(*n)),
             (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
         )
-        .throughput(|n| Throughput::Elements(*n as u32)),
+        .throughput(|n| Throughput::Elements(*n as u64)),
     );
 
     c.bench(
@@ -49,7 +49,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             |b, n| b.iter(|| insert::<Big>(*n)),
             (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
         )
-        .throughput(|n| Throughput::Elements(*n as u32)),
+        .throughput(|n| Throughput::Elements(*n as u64)),
     );
 
     c.bench(
@@ -66,7 +66,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             },
             (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
         )
-        .throughput(|n| Throughput::Elements(*n as u32)),
+        .throughput(|n| Throughput::Elements(*n as u64)),
     );
 
     c.bench(
@@ -83,7 +83,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             },
             (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
         )
-        .throughput(|n| Throughput::Elements(*n as u32)),
+        .throughput(|n| Throughput::Elements(*n as u64)),
     );
 
     c.bench(
@@ -99,7 +99,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             },
             (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
         )
-        .throughput(|n| Throughput::Elements(*n as u32)),
+        .throughput(|n| Throughput::Elements(*n as u64)),
     );
 
     c.bench(
@@ -115,7 +115,7 @@ fn criterion_benchmark(c: &mut Criterion) {
             },
             (1..3).map(|n| n * 100).collect::<Vec<usize>>(),
         )
-        .throughput(|n| Throughput::Elements(*n as u32)),
+        .throughput(|n| Throughput::Elements(*n as u64)),
     );
 }
 
