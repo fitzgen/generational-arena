@@ -10,7 +10,7 @@ problem](https://en.wikipedia.org/wiki/ABA_problem) by using generational
 indices.
 
 Inspired by [Catherine West's closing keynote at RustConf
-2018](http://rustconf.com/program.html#closingkeynote), where these ideas
+2018](https://www.youtube.com/watch?v=P9u8x13W7UE), where these ideas
 were presented in the context of an Entity-Component-System for games
 programming.
 
