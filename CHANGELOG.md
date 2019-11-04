@@ -1,3 +1,11 @@
+# 0.2.4
+
+Released 2019-11-04.
+
+* The `retain` method now gives mutable references to the arena's items, rather
+  than shared references. This matches `Vec::retain`.
+* Upgraded to 2018 edition.
+
 # 0.2.3
 
 Released 2019-09-25.
