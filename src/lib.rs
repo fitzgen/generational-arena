@@ -446,9 +446,9 @@ impl<T> Arena<T> {
     /// assert_eq!(crew_members.next(), Some("Alexander Smollett"));
     /// assert!(crew_members.next().is_none());
     /// ```
-    pub fn retain(&mut self, mut predicate: impl FnMut(Index, &T) -> bool) {
+    pub fn retain(&mut self, mut predicate: impl FnMut(Index, &mut T) -> bool) {
         for i in 0..self.len {
-            let remove = match &self.items[i] {
+            let remove = match &mut self.items[i] {
                 Entry::Occupied { generation, value } => {
                     let index = Index {
                         index: i,
