@@ -543,46 +543,6 @@ impl<T> Arena<T> {
         }
     }
 
-    /// Given a i of `usize` without generation, get a shared reference
-    /// to the element and the matching `Index` of the entry behind `i`.
-    ///
-    /// This method is useful when you know there might be an element at the
-    /// position i, but don't know its generation or precise Index.
-    ///
-    /// Use cases include using indexing such as Hierarchical BitMap Indexing or
-    /// other kinds of bit-efficient indexing.
-    ///
-    /// You should use the `get` method most of the time.
-    pub fn get_unknown_gen(&self, i: usize) -> Option<(&T, Index)> {
-        match self.items.get(i) {
-            Some(Entry::Occupied {
-                generation,
-                value,
-            }) => Some((value, Index { generation: *generation, index: i})),
-            _ => None,
-        }
-    }
-
-    /// Given a i of `usize` without generation, get an exclusive reference
-    /// to the element and the matching `Index` of the entry behind `i`.
-    ///
-    /// This method is useful when you know there might be an element at the
-    /// position i, but don't know its generation or precise Index.
-    ///
-    /// Use cases include using indexing such as Hierarchical BitMap Indexing or
-    /// other kinds of bit-efficient indexing.
-    ///
-    /// You should use the `get_mut` method most of the time.
-    pub fn get_unknown_gen_mut(&mut self, i: usize) -> Option<(&mut T, Index)> {
-        match self.items.get_mut(i) {
-            Some(Entry::Occupied {
-                generation,
-                value,
-            }) => Some((value, Index { generation: *generation, index: i})),
-            _ => None,
-        }
-    }
-
     /// Get a pair of exclusive references to the elements at index `i1` and `i2` if it is in the
     /// arena.
     ///
@@ -848,6 +808,46 @@ impl<T> Arena<T> {
     pub fn drain(&mut self) -> Drain<T> {
         Drain {
             inner: self.items.drain(..).enumerate(),
+        }
+    }
+
+    /// Given a i of `usize` without generation, get a shared reference
+    /// to the element and the matching `Index` of the entry behind `i`.
+    ///
+    /// This method is useful when you know there might be an element at the
+    /// position i, but don't know its generation or precise Index.
+    ///
+    /// Use cases include using indexing such as Hierarchical BitMap Indexing or
+    /// other kinds of bit-efficient indexing.
+    ///
+    /// You should use the `get` method most of the time.
+    pub fn get_unknown_gen(&self, i: usize) -> Option<(&T, Index)> {
+        match self.items.get(i) {
+            Some(Entry::Occupied {
+                generation,
+                value,
+            }) => Some((value, Index { generation: *generation, index: i})),
+            _ => None,
+        }
+    }
+
+    /// Given a i of `usize` without generation, get an exclusive reference
+    /// to the element and the matching `Index` of the entry behind `i`.
+    ///
+    /// This method is useful when you know there might be an element at the
+    /// position i, but don't know its generation or precise Index.
+    ///
+    /// Use cases include using indexing such as Hierarchical BitMap Indexing or
+    /// other kinds of bit-efficient indexing.
+    ///
+    /// You should use the `get_mut` method most of the time.
+    pub fn get_unknown_gen_mut(&mut self, i: usize) -> Option<(&mut T, Index)> {
+        match self.items.get_mut(i) {
+            Some(Entry::Occupied {
+                generation,
+                value,
+            }) => Some((value, Index { generation: *generation, index: i})),
+            _ => None,
         }
     }
 }
