@@ -103,6 +103,58 @@ quickcheck! {
 }
 
 quickcheck! {
+    fn unknown_gen_consistency(values: Vec<(usize, bool)>) -> bool {
+        let mut arena = Arena::new();
+
+        let inserted_indices: Vec<_> = values.iter().map(|(e, _)| arena.insert(e)).collect();
+        let unknown_gen_indices: Vec<_> = inserted_indices.iter().map(|idx| idx.into_raw_parts().0).collect();
+
+        // remove a couple elements at random
+        for (i, arena_index) in inserted_indices.iter().enumerate() {
+            if let Some((_, true)) = values.get(i) {
+                arena.remove(*arena_index);
+            }
+        }
+
+        // check that the results from get_unknown_gen() match get()
+        let first_batch = unknown_gen_indices.iter().enumerate().all(|(i, unknown_gen_idx)| {
+            let shared_check = if let Some((_, idx)) = arena.get_unknown_gen(*unknown_gen_idx) {
+                arena.get(idx).is_some() && inserted_indices[i] == idx
+            } else {
+                true
+            };
+            let mut_check = if let Some((_, idx)) = arena.get_unknown_gen_mut(*unknown_gen_idx) {
+                arena.get_mut(idx).is_some() && inserted_indices[i] == idx
+            } else {
+                true
+            };
+            shared_check && mut_check
+        });
+        if !first_batch {
+            // if the first batch didn't succeed, there is no reason to keep going with the test
+            return false
+        }
+
+        // check that the results from get() match get_unknown_check()
+        inserted_indices.iter().enumerate().all(|(i, idx)| {
+            let shared_check = if let Some(_) = arena.get(*idx) {
+                let internal_index = idx.into_raw_parts().0;
+                arena.get_unknown_gen(internal_index).is_some() && unknown_gen_indices[i] == internal_index
+            } else {
+                true
+            };
+            let mut_check = if let Some(_) = arena.get_mut(*idx) {
+                let internal_index = idx.into_raw_parts().0;
+                arena.get_unknown_gen_mut(internal_index).is_some() && unknown_gen_indices[i] == internal_index
+            } else {
+                true
+            };
+            shared_check && mut_check
+        })
+    }
+}
+
+quickcheck! {
     fn from_iter_into_iter(elems: BTreeSet<usize>) -> bool {
         let arena = Arena::from_iter(elems.clone());
         arena.into_iter().collect::<BTreeSet<_>>() == elems

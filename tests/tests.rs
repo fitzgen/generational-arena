@@ -88,6 +88,46 @@ fn get2_mut() {
 }
 
 #[test]
+fn get_unknown_gen() {
+    let mut arena = Arena::new();
+    let idx = arena.insert(5);
+
+    let i = idx.into_raw_parts().0;
+
+    if let Some((el, id)) = arena.get_unknown_gen(i) {
+        assert_eq!(id, idx);
+        assert_eq!(*el, 5);
+    } else {
+        panic!("element at index {} (without generation) should exist at this point", i);
+    }
+    arena.remove(idx);
+    if let Some((_, _)) = arena.get_unknown_gen(i) {
+        panic!("element at index {} (without generation) should not exist at this point", i);
+    }
+}
+
+#[test]
+fn get_unknown_gen_mut() {
+    let mut arena = Arena::new();
+    let idx = arena.insert(5);
+
+    let i = idx.into_raw_parts().0;
+
+    if let Some((el, id)) = arena.get_unknown_gen_mut(i) {
+        assert_eq!(id, idx);
+        assert_eq!(*el, 5);
+        *el += 1;
+    } else {
+        panic!("element at index {} (without generation) should exist at this point", i);
+    }
+    assert_eq!(arena.get_mut(idx).cloned(), Some(6));
+    arena.remove(idx);
+    if let Some((_, _)) = arena.get_unknown_gen_mut(i) {
+        panic!("element at index {} (without generation) should not exist at this point", i);
+    }
+}
+
+#[test]
 fn get2_mut_with_same_index_but_different_generation() {
     let mut arena = Arena::with_capacity(2);
     let idx1 = arena.insert(0);
