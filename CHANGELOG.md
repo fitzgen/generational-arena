@@ -1,3 +1,14 @@
+# 0.2.6
+
+Released 2019-11-11.
+
+* Added `Arena::get_unknown_gen[_mut]` methods for the rare cases where you need
+  to get the item and `Index` at a given offset within the arena.
+
+# 0.2.5
+
+Yanked because of bad `cargo publish`.
+
 # 0.2.4
 
 Released 2019-11-04.
