@@ -230,3 +230,30 @@ fn clear() {
     assert_eq!(arena.capacity(), 4);
     assert_eq!(arena.len(), 0);
 }
+
+#[test]
+fn retain() {
+    let mut arena = Arena::with_capacity(4);
+    let index = arena.insert(2);
+    arena.insert(1);
+    arena.insert(4);
+    arena.insert(3);
+
+    assert_eq!(arena.len(), 4);
+
+    arena.retain(|_, n| *n < 4);
+
+    assert_eq!(arena.len(), 3);
+    assert!(arena.iter().all(|(_, n)| *n < 4));
+
+    arena.retain(|_, n| *n < 3);
+
+    assert_eq!(arena.len(), 2);
+    assert!(arena.iter().all(|(_, n)| *n < 3));
+    assert!(arena.contains(index));
+
+    arena.retain(|i, _| i != index);
+
+    assert_eq!(arena.len(), 1);
+    assert!(!arena.contains(index));
+}
