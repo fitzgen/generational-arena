@@ -447,7 +447,7 @@ impl<T> Arena<T> {
     /// assert!(crew_members.next().is_none());
     /// ```
     pub fn retain(&mut self, mut predicate: impl FnMut(Index, &mut T) -> bool) {
-        for i in 0..self.len {
+        for i in 0..self.capacity() {
             let remove = match &mut self.items[i] {
                 Entry::Occupied { generation, value } => {
                     let index = Index {
