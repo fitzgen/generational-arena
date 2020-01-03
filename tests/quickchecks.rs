@@ -160,3 +160,36 @@ quickcheck! {
         arena.into_iter().collect::<BTreeSet<_>>() == elems
     }
 }
+
+quickcheck! {
+    fn retain(elems: Vec<bool>) -> () {
+        let mut arena = Arena::new();
+        let mut live_indices = vec![];
+        let mut dead_indices = vec![];
+
+        for elem in elems {
+            let idx = arena.insert(elem);
+            if elem {
+                live_indices.push(idx);
+            } else {
+                dead_indices.push(idx);
+            }
+        }
+
+        arena.retain(|_, &mut b| b);
+        
+        for live in live_indices.iter().cloned() {
+            assert!(arena.contains(live));
+        }
+
+        for dead in dead_indices.iter().cloned() {
+            assert!(!arena.contains(dead));
+        }
+
+        arena.retain(|_, &mut b| !b);
+
+        for live in live_indices.iter().cloned() {
+            assert!(!arena.contains(live));
+        }
+    }
+}
