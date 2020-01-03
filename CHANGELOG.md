@@ -1,3 +1,11 @@
+# 0.2.7
+
+Released 2020-01-03.
+
+* Fixed a bug in `Arena::retain` where not every element was always considered
+  for retention. See https://github.com/fitzgen/generational-arena/pull/28 for
+  details.
+
 # 0.2.6
 
 Released 2019-11-11.
