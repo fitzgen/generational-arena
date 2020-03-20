@@ -9,7 +9,7 @@ problem](https://en.wikipedia.org/wiki/ABA_problem) by using generational
 indices.
 
 Inspired by [Catherine West's closing keynote at RustConf
-2018](http://rustconf.com/program.html#closingkeynote), where these ideas
+2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas
 were presented in the context of an Entity-Component-System for games
 programming.
 
@@ -21,7 +21,7 @@ inter-referencing objects with dynamic lifetimes that depend on user
 input. These are situations where matching Rust's ownership and lifetime rules
 can get tricky.
 
-It doesn't make sense to use shared ownership with interior mutability (ie
+It doesn't make sense to use shared ownership with interior mutability (i.e.
 `Rc<RefCell<T>>` or `Arc<Mutex<T>>`) nor borrowed references (ie `&'a T` or `&'a
 mut T`) for structures. The cycles rule out reference counted types, and the
 required shared mutability rules out borrows. Furthermore, lifetimes are dynamic
@@ -74,7 +74,7 @@ First, add `generational-arena` to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-generational-arena = "0.1"
+generational-arena = "0.2"
 ```
 
 Then, import the crate and use the
@@ -811,7 +811,7 @@ impl<T> Arena<T> {
         }
     }
 
-    /// Given a i of `usize` without generation, get a shared reference
+    /// Given an i of `usize` without a generation, get a shared reference
     /// to the element and the matching `Index` of the entry behind `i`.
     ///
     /// This method is useful when you know there might be an element at the
@@ -820,7 +820,7 @@ impl<T> Arena<T> {
     /// Use cases include using indexing such as Hierarchical BitMap Indexing or
     /// other kinds of bit-efficient indexing.
     ///
-    /// You should use the `get` method most of the time.
+    /// You should use the `get` method instead most of the time.
     pub fn get_unknown_gen(&self, i: usize) -> Option<(&T, Index)> {
         match self.items.get(i) {
             Some(Entry::Occupied {
@@ -831,7 +831,7 @@ impl<T> Arena<T> {
         }
     }
 
-    /// Given a i of `usize` without generation, get an exclusive reference
+    /// Given an i of `usize` without a generation, get an exclusive reference
     /// to the element and the matching `Index` of the entry behind `i`.
     ///
     /// This method is useful when you know there might be an element at the
@@ -840,7 +840,7 @@ impl<T> Arena<T> {
     /// Use cases include using indexing such as Hierarchical BitMap Indexing or
     /// other kinds of bit-efficient indexing.
     ///
-    /// You should use the `get_mut` method most of the time.
+    /// You should use the `get_mut` method instead most of the time.
     pub fn get_unknown_gen_mut(&mut self, i: usize) -> Option<(&mut T, Index)> {
         match self.items.get_mut(i) {
             Some(Entry::Occupied {
