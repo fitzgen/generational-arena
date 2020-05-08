@@ -231,6 +231,12 @@ impl Index {
 
 const DEFAULT_CAPACITY: usize = 4;
 
+impl<T> Default for Arena<T> {
+    fn default() -> Arena<T> {
+        Arena::new()
+    }
+}
+
 impl<T> Arena<T> {
     /// Constructs a new, empty `Arena`.
     ///
