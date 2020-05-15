@@ -355,7 +355,33 @@ impl<T> Arena<T> {
         }
     }
 
-    /// TODO DOCS
+    /// Attempts to insert the value returned by `create` into the arena using existing capacity.
+    /// `create` is called with the new value's associated index, allowing values that know their own index.
+    ///
+    /// This method will never allocate new capacity in the arena.
+    ///
+    /// If insertion succeeds, then the new index is returned. If
+    /// insertion fails, then `Err(create)` is returned to give ownership of
+    /// `create` back to the caller.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::{Arena, Index};
+    ///
+    /// let mut arena = Arena::new();
+    ///
+    /// match arena.try_insert_with(|idx| (42, idx)) {
+    ///     Ok(idx) => {
+    ///         // Insertion succeeded.
+    ///         assert_eq!(arena[idx].0, 42);
+    ///         assert_eq!(arena[idx].1, idx);
+    ///     }
+    ///     Err(x) => {
+    ///         // Insertion failed.
+    ///     }
+    /// };
+    /// ```
     #[inline]
     pub fn try_insert_with<F: FnOnce(Index) -> T>(&mut self, create: F) -> Result<Index, F> {
         match self.try_alloc_next_index() {
@@ -410,7 +436,22 @@ impl<T> Arena<T> {
         }
     }
 
-    /// TODO DOCS
+    /// Insert the value returned by `create` into the arena, allocating more capacity if necessary.
+    /// `create` is called with the new value's associated index, allowing values that know their own index.
+    ///
+    /// The new value's associated index in the arena is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::{Arena, Index};
+    ///
+    /// let mut arena = Arena::new();
+    ///
+    /// let idx = arena.insert_with(|idx| (42, idx));
+    /// assert_eq!(arena[idx].0, 42);
+    /// assert_eq!(arena[idx].1, idx);
+    /// ```
     #[inline]
     pub fn insert_with(&mut self, create: impl FnOnce(Index) -> T) -> Index {
         match self.try_insert_with(create) {
