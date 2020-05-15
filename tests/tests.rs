@@ -46,6 +46,14 @@ fn try_insert_when_full() {
 }
 
 #[test]
+fn try_insert_with_when_full() {
+    let mut arena = Arena::with_capacity(1);
+    let first_index = arena.try_insert_with(|_| 42).ok().unwrap();
+    let returned_fn = arena.try_insert_with(|_| 42).unwrap_err();
+    assert_eq!(returned_fn(first_index), 42);
+}
+
+#[test]
 fn insert_many_and_cause_doubling() {
     let mut arena = Arena::new();
     let indices: Vec<_> = (0..1000).map(|i| arena.insert(i * i)).collect();
@@ -53,6 +61,34 @@ fn insert_many_and_cause_doubling() {
         assert_eq!(arena.remove(idx).unwrap(), i * i);
         assert!(!arena.contains(idx));
     }
+}
+
+#[test]
+fn insert_with_indicies_match() {
+    let mut arena = Arena::new();
+    let a = arena.insert_with(|idx| (40, idx));
+    let b = arena.insert_with(|idx| (41, idx));
+    let c = arena.insert_with(|idx| (42, idx));
+    assert_eq!(arena[a].0, 40);
+    assert_eq!(arena[b].0, 41);
+    assert_eq!(arena[c].0, 42);
+    assert_eq!(arena[a].1, a);
+    assert_eq!(arena[b].1, b);
+    assert_eq!(arena[c].1, c);
+}
+
+#[test]
+fn try_insert_with_indicies_match() {
+    let mut arena = Arena::with_capacity(3);
+    let a = arena.try_insert_with(|idx| (40, idx)).ok().unwrap();
+    let b = arena.try_insert_with(|idx| (41, idx)).ok().unwrap();
+    let c = arena.try_insert_with(|idx| (42, idx)).ok().unwrap();
+    assert_eq!(arena[a].0, 40);
+    assert_eq!(arena[b].0, 41);
+    assert_eq!(arena[c].0, 42);
+    assert_eq!(arena[a].1, a);
+    assert_eq!(arena[b].1, b);
+    assert_eq!(arena[c].1, c);
 }
 
 #[test]
