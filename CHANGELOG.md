@@ -1,3 +1,13 @@
+# 0.2.8
+
+Released 2020-05-18.
+
+* Add a `Default` implementation for `Arena`
+* Add the `insert_with` and `try_insert_with` methods to `Arena`. These methods
+  allow creating a value while inserting it, and the function to create the
+  value is given the its id in the arena. For example, this allows a struct that
+  is in an arena to have a member field that is its id within the arena.
+
 # 0.2.7
 
 Released 2020-01-03.
