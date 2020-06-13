@@ -300,19 +300,8 @@ impl<T> Arena<T> {
     /// ```
     pub fn clear(&mut self) {
         self.items.clear();
-
-        let end = self.items.capacity();
-        self.items.extend((0..end).map(|i| {
-            if i == end - 1 {
-                Entry::Free { next_free: None }
-            } else {
-                Entry::Free {
-                    next_free: Some(i + 1),
-                }
-            }
-        }));
-        self.free_list_head = Some(0);
         self.len = 0;
+        self.reserve(self.items.capacity());
     }
 
     /// Attempts to insert `value` into the arena using existing capacity.
@@ -814,6 +803,35 @@ impl<T> Arena<T> {
             }
         }));
         self.free_list_head = Some(start);
+    }
+
+    /// Reduces allocated space to the minimum possible to fit all the elements in the arena.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut arena = Arena::new();
+    /// arena.extend([1, 2, 3, 4, 5].iter().copied());
+    /// assert!(arena.capacity() >= 5);
+    /// arena.shrink_to_fit();
+    /// assert_eq!(arena.capacity(), 5);
+    /// ```
+    pub fn shrink_to_fit(&mut self) {
+        self.items.truncate(self.items.iter().rposition(|entry| matches!(entry, Entry::Occupied { .. })).map(|n| n + 1).unwrap_or(0));
+        self.items.shrink_to_fit();
+
+        self.free_list_head = None;
+        for (i, item) in self.items.iter_mut().enumerate() {
+            match item {
+                Entry::Occupied { .. } => (),
+                Entry::Free { next_free } => {
+                    *next_free = self.free_list_head;
+                    self.free_list_head = Some(i);
+                }
+            }
+        }
     }
 
     /// Iterate over shared references to the elements in this arena.
