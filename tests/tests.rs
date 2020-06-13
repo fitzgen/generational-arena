@@ -293,3 +293,28 @@ fn retain() {
     assert_eq!(arena.len(), 1);
     assert!(!arena.contains(index));
 }
+
+#[test]
+fn shrink_to_fit() {
+    let mut arena = Arena::with_capacity(4);
+
+    arena.extend([1, 2, 3, 4].iter().copied());
+    let five = arena.insert(5);
+    assert_eq!(arena.capacity(), 8);
+
+    arena.shrink_to_fit();
+    assert_eq!(arena.len(), 5);
+    assert_eq!(arena.capacity(), 5);
+
+    arena.insert(6);
+    assert_eq!(arena.capacity(), 10);
+
+    arena.shrink_to_fit();
+    assert_eq!(arena.len(), 6);
+    assert_eq!(arena.capacity(), 6);
+
+    arena.remove(five);
+    arena.shrink_to_fit();
+    assert_eq!(arena.len(), 5);
+    assert_eq!(arena.capacity(), 6);
+}
