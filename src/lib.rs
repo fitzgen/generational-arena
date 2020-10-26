@@ -210,8 +210,8 @@ impl Index {
     ///
     /// Providing arbitrary values will lead to malformed indices and ultimately
     /// panics.
-    pub fn from_raw_parts(a: usize, b: u64) -> Index {
-        Index {
+    pub fn from_raw_parts(a: usize, b: u64) -> Self {
+        Self {
             index: a,
             generation: b,
         }
@@ -232,8 +232,8 @@ impl Index {
 const DEFAULT_CAPACITY: usize = 4;
 
 impl<T> Default for Arena<T> {
-    fn default() -> Arena<T> {
-        Arena::new()
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -248,8 +248,8 @@ impl<T> Arena<T> {
     /// let mut arena = Arena::<usize>::new();
     /// # let _ = arena;
     /// ```
-    pub fn new() -> Arena<T> {
-        Arena::with_capacity(DEFAULT_CAPACITY)
+    pub fn new() -> Self {
+        Self::with_capacity(DEFAULT_CAPACITY)
     }
 
     /// Constructs a new, empty `Arena<T>` with the specified capacity.
@@ -271,7 +271,7 @@ impl<T> Arena<T> {
     /// // But now we are at capacity, and there is no more room.
     /// assert!(arena.try_insert(99).is_err());
     /// ```
-    pub fn with_capacity(n: usize) -> Arena<T> {
+    pub fn with_capacity(n: usize) -> Self {
         let n = cmp::max(n, 1);
         let mut arena = Arena {
             items: Vec::new(),
