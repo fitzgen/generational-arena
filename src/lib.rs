@@ -168,7 +168,7 @@ mod serde_impl;
 /// `Index`.
 ///
 /// [See the module-level documentation for example usage and motivation.](./index.html)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Arena<T> {
     items: Vec<Entry<T>>,
     generation: u64,
@@ -176,7 +176,7 @@ pub struct Arena<T> {
     len: usize,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 enum Entry<T> {
     Free { next_free: Option<usize> },
     Occupied { generation: u64, value: T },
@@ -351,7 +351,7 @@ impl<T> Arena<T> {
                     value,
                 };
                 Ok(index)
-            },
+            }
         }
     }
 
@@ -392,7 +392,7 @@ impl<T> Arena<T> {
                     value: create(index),
                 };
                 Ok(index)
-            },
+            }
         }
     }
 
@@ -410,7 +410,7 @@ impl<T> Arena<T> {
                         generation: self.generation,
                     })
                 }
-            }
+            },
         }
     }
 
@@ -503,14 +503,19 @@ impl<T> Arena<T> {
             Entry::Occupied { generation, .. } if i.generation == generation => {
                 let entry = mem::replace(
                     &mut self.items[i.index],
-                    Entry::Free { next_free: self.free_list_head },
+                    Entry::Free {
+                        next_free: self.free_list_head,
+                    },
                 );
                 self.generation += 1;
                 self.free_list_head = Some(i.index);
                 self.len -= 1;
 
                 match entry {
-                    Entry::Occupied { generation: _, value } => Some(value),
+                    Entry::Occupied {
+                        generation: _,
+                        value,
+                    } => Some(value),
                     _ => unreachable!(),
                 }
             }
@@ -598,10 +603,9 @@ impl<T> Arena<T> {
     /// ```
     pub fn get(&self, i: Index) -> Option<&T> {
         match self.items.get(i.index) {
-            Some(Entry::Occupied {
-                generation,
-                value,
-            }) if *generation == i.generation => Some(value),
+            Some(Entry::Occupied { generation, value }) if *generation == i.generation => {
+                Some(value)
+            }
             _ => None,
         }
     }
@@ -625,10 +629,9 @@ impl<T> Arena<T> {
     /// ```
     pub fn get_mut(&mut self, i: Index) -> Option<&mut T> {
         match self.items.get_mut(i.index) {
-            Some(Entry::Occupied {
-                generation,
-                value,
-            }) if *generation == i.generation => Some(value),
+            Some(Entry::Occupied { generation, value }) if *generation == i.generation => {
+                Some(value)
+            }
             _ => None,
         }
     }
@@ -690,18 +693,12 @@ impl<T> Arena<T> {
         };
 
         let item1 = match raw_item1 {
-            Entry::Occupied {
-                generation,
-                value,
-            } if *generation == i1.generation => Some(value),
+            Entry::Occupied { generation, value } if *generation == i1.generation => Some(value),
             _ => None,
         };
 
         let item2 = match raw_item2 {
-            Entry::Occupied {
-                generation,
-                value,
-            } if *generation == i2.generation => Some(value),
+            Entry::Occupied { generation, value } if *generation == i2.generation => Some(value),
             _ => None,
         };
 
@@ -913,10 +910,13 @@ impl<T> Arena<T> {
     /// You should use the `get` method instead most of the time.
     pub fn get_unknown_gen(&self, i: usize) -> Option<(&T, Index)> {
         match self.items.get(i) {
-            Some(Entry::Occupied {
-                generation,
+            Some(Entry::Occupied { generation, value }) => Some((
                 value,
-            }) => Some((value, Index { generation: *generation, index: i})),
+                Index {
+                    generation: *generation,
+                    index: i,
+                },
+            )),
             _ => None,
         }
     }
@@ -933,10 +933,13 @@ impl<T> Arena<T> {
     /// You should use the `get_mut` method instead most of the time.
     pub fn get_unknown_gen_mut(&mut self, i: usize) -> Option<(&mut T, Index)> {
         match self.items.get_mut(i) {
-            Some(Entry::Occupied {
-                generation,
+            Some(Entry::Occupied { generation, value }) => Some((
                 value,
-            }) => Some((value, Index { generation: *generation, index: i})),
+                Index {
+                    generation: *generation,
+                    index: i,
+                },
+            )),
             _ => None,
         }
     }
