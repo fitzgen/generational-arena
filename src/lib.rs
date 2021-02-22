@@ -141,7 +141,7 @@ generational-arena = { version = "0.2", features = ["serde"] }
 ```
  */
 
-#![forbid(unsafe_code, missing_docs, missing_debug_implementations)]
+#![forbid(missing_docs, missing_debug_implementations)]
 #![no_std]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 
@@ -163,6 +163,9 @@ use core::slice;
 
 #[cfg(feature = "serde")]
 mod serde_impl;
+
+mod typed_index;
+pub use typed_index::*;
 
 /// The `Arena` allows inserting and removing elements that are referred to by
 /// `Index`.
@@ -203,6 +206,11 @@ pub struct Index {
 }
 
 impl Index {
+    ///
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
     /// Create a new `Index` from its raw parts.
     ///
     /// The parts must have been returned from an earlier call to
