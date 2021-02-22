@@ -12,7 +12,7 @@ impl<T> TypedIndex<T> {
     pub fn new(inner: Index) -> Self {
         Self {
             inner,
-            ph: Default::default()
+            ph: Default::default(),
         }
     }
 
@@ -89,6 +89,19 @@ impl<T> std::ops::Index<TypedIndex<T>> for Arena<T> {
 
 impl<T> std::ops::IndexMut<TypedIndex<T>> for Arena<T> {
     fn index_mut(&mut self, index: TypedIndex<T>) -> &mut Self::Output {
+        &mut self[index.inner]
+    }
+}
+
+impl<T> std::ops::Index<&TypedIndex<T>> for Arena<T> {
+    type Output = T;
+    fn index(&self, index: &TypedIndex<T>) -> &Self::Output {
+        &self[index.inner]
+    }
+}
+
+impl<T> std::ops::IndexMut<&TypedIndex<T>> for Arena<T> {
+    fn index_mut(&mut self, index: &TypedIndex<T>) -> &mut Self::Output {
         &mut self[index.inner]
     }
 }
