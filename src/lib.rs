@@ -167,6 +167,8 @@ mod serde_impl;
 mod typed_index;
 pub use typed_index::*;
 
+mod typed_index2;
+pub use typed_index2::*;
 /// The `Arena` allows inserting and removing elements that are referred to by
 /// `Index`.
 ///

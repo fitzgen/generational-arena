@@ -58,7 +58,7 @@ impl<T> From<Index> for TypedIndex<T> {
 impl<T> Debug for TypedIndex<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct(std::any::type_name::<Self>())
-            .field("inner", &self.inner)
+            .field("inner: ", &self.inner)
             .finish()
     }
 }
