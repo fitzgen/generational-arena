@@ -6,9 +6,18 @@ extern crate serde;
 extern crate bincode;
 extern crate serde_test;
 
-use generational_arena::{Arena, Index};
-use serde::{Deserialize, Serialize};
-use serde_test::{assert_ser_tokens, Token};
+use generational_arena::{
+    Arena,
+    Index,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use serde_test::{
+    assert_ser_tokens,
+    Token,
+};
 use std::fmt::Debug;
 
 #[test]

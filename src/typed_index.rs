@@ -1,5 +1,11 @@
-use crate::{Arena, Index};
-use std::{fmt::Debug, hash::Hash};
+use crate::{
+    Arena,
+    Index,
+};
+use std::{
+    fmt::Debug,
+    hash::Hash,
+};
 
 ///
 pub struct TypedIndex<T> {

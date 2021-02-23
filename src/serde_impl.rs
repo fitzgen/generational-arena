@@ -1,10 +1,25 @@
-use super::{Arena, Entry, Index, TypedIndex, Vec, DEFAULT_CAPACITY};
+use super::{
+    Arena,
+    Entry,
+    Index,
+    TypedIndex,
+    Vec,
+    DEFAULT_CAPACITY,
+};
 use core::cmp;
 use core::fmt;
 use core::iter;
 use core::marker::PhantomData;
-use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
-use serde::ser::{Serialize, Serializer};
+use serde::de::{
+    Deserialize,
+    Deserializer,
+    SeqAccess,
+    Visitor,
+};
+use serde::ser::{
+    Serialize,
+    Serializer,
+};
 
 impl Serialize for Index {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

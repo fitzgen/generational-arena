@@ -156,7 +156,12 @@ cfg_if::cfg_if! {
 }
 
 use core::cmp;
-use core::iter::{self, Extend, FromIterator, FusedIterator};
+use core::iter::{
+    self,
+    Extend,
+    FromIterator,
+    FusedIterator,
+};
 use core::mem;
 use core::ops;
 use core::slice;
