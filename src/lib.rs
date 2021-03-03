@@ -169,11 +169,17 @@ use core::slice;
 #[cfg(feature = "serde")]
 mod serde_impl;
 
+///
+pub mod prelude;
+
 mod typed_index;
 pub use typed_index::*;
 
 mod typed_index2;
 pub use typed_index2::*;
+
+mod ext;
+pub use ext::*;
 /// The `Arena` allows inserting and removing elements that are referred to by
 /// `Index`.
 ///

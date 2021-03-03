@@ -24,6 +24,11 @@ impl<T> TypedIndex<T> {
     }
 
     ///
+    pub fn index(&self) -> usize {
+        self.inner.index()
+    }
+
+    ///
     #[inline]
     pub fn inner(&self) -> Index {
         self.inner
