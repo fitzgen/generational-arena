@@ -631,6 +631,11 @@ impl<T> Arena<T> {
         }
     }
 
+    ///
+    pub fn typed_get(&self, i: TypedIndex<T>) -> Option<&T> {
+        self.get(i.inner())
+    }
+
     /// Get an exclusive reference to the element at index `i` if it is in the
     /// arena.
     ///
@@ -655,6 +660,11 @@ impl<T> Arena<T> {
             }
             _ => None,
         }
+    }
+
+      ///
+      pub fn typed_get_mut(&mut self, i: TypedIndex<T>) -> Option<&mut T> {
+        self.get_mut(i.inner())
     }
 
     /// Get a pair of exclusive references to the elements at index `i1` and `i2` if it is in the
