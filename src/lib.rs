@@ -184,7 +184,7 @@ pub use ext::*;
 /// `Index`.
 ///
 /// [See the module-level documentation for example usage and motivation.](./index.html)
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct Arena<T> {
     items: Vec<Entry<T>>,
     generation: u64,
@@ -192,7 +192,7 @@ pub struct Arena<T> {
     len: usize,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 enum Entry<T> {
     Free { next_free: Option<usize> },
     Occupied { generation: u64, value: T },
