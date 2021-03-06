@@ -29,6 +29,11 @@ impl<T> TypedIndex<T> {
     }
 
     ///
+    pub fn generation(&self) -> u64 {
+        self.inner.generation
+    }
+
+    ///
     #[inline]
     pub fn inner(&self) -> Index {
         self.inner
