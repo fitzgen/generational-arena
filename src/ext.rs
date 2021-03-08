@@ -1,5 +1,3 @@
-
-
 use crate::Arena;
 
 // impl<T> std::ops::Index<Iterator<Item=TypedIndex<T>>> for Arena<T> {

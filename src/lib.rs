@@ -180,6 +180,12 @@ pub use typed_index2::*;
 
 mod ext;
 pub use ext::*;
+
+mod typed_iter;
+pub use typed_iter::*;
+
+mod typed_iter_mut;
+pub use typed_iter_mut::*;
 /// The `Arena` allows inserting and removing elements that are referred to by
 /// `Index`.
 ///
@@ -662,8 +668,8 @@ impl<T> Arena<T> {
         }
     }
 
-      ///
-      pub fn typed_get_mut(&mut self, i: TypedIndex<T>) -> Option<&mut T> {
+    ///
+    pub fn typed_get_mut(&mut self, i: TypedIndex<T>) -> Option<&mut T> {
         self.get_mut(i.inner())
     }
 
@@ -895,6 +901,18 @@ impl<T> Arena<T> {
         IterMut {
             len: self.len,
             inner: self.items.iter_mut().enumerate(),
+        }
+    }
+
+    ///
+    pub fn typed_iter(&self) -> TypedIter<T> {
+        TypedIter { inner: self.iter() }
+    }
+
+    ///
+    pub fn typed_iter_mut(&mut self) -> TypedIterMut<T> {
+        TypedIterMut {
+            inner: self.iter_mut(),
         }
     }
 
