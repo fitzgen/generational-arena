@@ -305,3 +305,19 @@ fn retain() {
     assert_eq!(arena.len(), 1);
     assert!(!arena.contains(index));
 }
+
+
+#[test]
+fn test_typed_iter() {
+    let mut arena = Arena::new();
+    let a = arena.insert(1);
+    let b = arena.insert(2);
+    let c = arena.insert(3);
+    let d = arena.insert(4);
+
+    let mut j = 1;
+    for (_, e) in arena.typed_iter() {
+        assert!(*e == j);
+        j += 1;
+    }
+}
