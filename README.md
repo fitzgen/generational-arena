@@ -3,15 +3,15 @@
 [![](https://docs.rs/generational-arena/badge.svg)](https://docs.rs/generational-arena/)
 [![](https://img.shields.io/crates/v/generational-arena.svg)](https://crates.io/crates/generational-arena)
 [![](https://img.shields.io/crates/d/generational-arena.svg)](https://crates.io/crates/generational-arena)
-[![](https://github.com/fitzgen/generational-arena/actions/workflows/rust.yml/badge.svg)](https://github.com/fitzgen/generational-arena/actions/workflows/rust.yml)
+[![Travis CI Build Status](https://travis-ci.org/fitzgen/generational-arena.svg?branch=master)](https://travis-ci.org/fitzgen/generational-arena)
 
 A safe arena allocator that allows deletion without suffering from [the ABA
 problem](https://en.wikipedia.org/wiki/ABA_problem) by using generational
 indices.
 
 Inspired by [Catherine West's closing keynote at RustConf
-2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas
-were presented in the context of an Entity-Component-System for games
+2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas (and many
+more!) were presented in the context of an Entity-Component-System for games
 programming.
 
 ### What? Why?
@@ -124,8 +124,7 @@ for (idx, value) in &arena {
 
 ### `no_std`
 
-To enable `no_std` compatibility, disable the on-by-default "std" feature. This
-currently requires nightly Rust and `feature(alloc)` to get access to `Vec`.
+To enable `no_std` compatibility, disable the on-by-default "std" feature.
 
 ```toml
 [dependencies]

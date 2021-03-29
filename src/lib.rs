@@ -9,8 +9,8 @@ problem](https://en.wikipedia.org/wiki/ABA_problem) by using generational
 indices.
 
 Inspired by [Catherine West's closing keynote at RustConf
-2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas
-were presented in the context of an Entity-Component-System for games
+2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas (and many
+more!) were presented in the context of an Entity-Component-System for games
 programming.
 
 ## What? Why?
