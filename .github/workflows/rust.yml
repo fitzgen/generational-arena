@@ -17,8 +17,10 @@ jobs:
     - run: cargo install --vers "^3" cargo-readme
     - run: cargo test
     - run: cargo test --features serde
+
   no_std:
     runs-on: ubuntu-latest
+    steps:
     - uses: actions/checkout@v2
     - run: rustup default nightly
     - run: cargo install --vers "^3" cargo-readme
