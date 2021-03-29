@@ -123,8 +123,7 @@ for (idx, value) in &arena {
 
 ## `no_std`
 
-To enable `no_std` compatibility, disable the on-by-default "std" feature. This
-currently requires nightly Rust and `feature(alloc)` to get access to `Vec`.
+To enable `no_std` compatibility, disable the on-by-default "std" feature.
 
 ```toml
 [dependencies]
@@ -143,7 +142,6 @@ generational-arena = { version = "0.2", features = ["serde"] }
 
 #![forbid(unsafe_code, missing_docs, missing_debug_implementations)]
 #![no_std]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
