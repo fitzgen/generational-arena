@@ -1270,6 +1270,21 @@ impl<'a, T> Iterator for Drain<'a, T> {
     }
 }
 
+impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next_back() {
+                Some((_, Entry::Free { .. })) => continue,
+                Some((index, Entry::Occupied { generation, value })) => {
+                    let idx = Index { index, generation };
+                    return Some((idx, value));
+                }
+                None => return None,
+            }
+        }
+    }
+}
+
 impl<T> Extend<T> for Arena<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         for t in iter {
