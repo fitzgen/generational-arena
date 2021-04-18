@@ -198,6 +198,7 @@ pub struct Arena<T> {
     len: usize,
 }
 
+#[repr(C)]
 #[derive(Clone, Debug)]
 enum Entry<T> {
     Free { next_free: Option<usize> },
@@ -218,6 +219,7 @@ enum Entry<T> {
 /// let idx = arena.insert(123);
 /// assert_eq!(arena[idx], 123);
 /// ```
+#[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Index {
     index: usize,
