@@ -895,6 +895,7 @@ impl<T> Arena<T> {
     /// ```
     pub fn drain(&mut self) -> Drain<T> {
         Drain {
+            len: self.len,
             inner: self.items.drain(..).enumerate(),
         }
     }
@@ -1250,6 +1251,7 @@ impl<'a, T> FusedIterator for IterMut<'a, T> {}
 /// ```
 #[derive(Debug)]
 pub struct Drain<'a, T: 'a> {
+    len: usize,
     inner: iter::Enumerate<vec::Drain<'a, Entry<T>>>,
 }
 
@@ -1262,13 +1264,48 @@ impl<'a, T> Iterator for Drain<'a, T> {
                 Some((_, Entry::Free { .. })) => continue,
                 Some((index, Entry::Occupied { generation, value })) => {
                     let idx = Index { index, generation };
+                    self.len -= 1;
                     return Some((idx, value));
                 }
-                None => return None,
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None;
+                }
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next_back() {
+                Some((_, Entry::Free { .. })) => continue,
+                Some((index, Entry::Occupied { generation, value })) => {
+                    let idx = Index { index, generation };
+                    self.len -= 1;
+                    return Some((idx, value));
+                }
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None;
+                }
             }
         }
     }
 }
+
+impl<'a, T> ExactSizeIterator for Drain<'a, T> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+impl<'a, T> FusedIterator for Drain<'a, T> {}
 
 impl<T> Extend<T> for Arena<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
