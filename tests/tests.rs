@@ -134,11 +134,17 @@ fn get_unknown_gen() {
         assert_eq!(id, idx);
         assert_eq!(*el, 5);
     } else {
-        panic!("element at index {} (without generation) should exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should exist at this point",
+            i
+        );
     }
     arena.remove(idx);
     if let Some((_, _)) = arena.get_unknown_gen(i) {
-        panic!("element at index {} (without generation) should not exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should not exist at this point",
+            i
+        );
     }
 }
 
@@ -154,12 +160,18 @@ fn get_unknown_gen_mut() {
         assert_eq!(*el, 5);
         *el += 1;
     } else {
-        panic!("element at index {} (without generation) should exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should exist at this point",
+            i
+        );
     }
     assert_eq!(arena.get_mut(idx).cloned(), Some(6));
     arena.remove(idx);
     if let Some((_, _)) = arena.get_unknown_gen_mut(i) {
-        panic!("element at index {} (without generation) should not exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should not exist at this point",
+            i
+        );
     }
 }
 
@@ -292,4 +304,29 @@ fn retain() {
 
     assert_eq!(arena.len(), 1);
     assert!(!arena.contains(index));
+}
+
+#[test]
+fn shrink_to_fit() {
+    let mut arena = Arena::with_capacity(4);
+
+    arena.extend([1, 2, 3, 4].iter().copied());
+    let five = arena.insert(5);
+    assert_eq!(arena.capacity(), 8);
+
+    arena.shrink_to_fit();
+    assert_eq!(arena.len(), 5);
+    assert_eq!(arena.capacity(), 5);
+
+    arena.insert(6);
+    assert_eq!(arena.capacity(), 10);
+
+    arena.shrink_to_fit();
+    assert_eq!(arena.len(), 6);
+    assert_eq!(arena.capacity(), 6);
+
+    arena.remove(five);
+    arena.shrink_to_fit();
+    assert_eq!(arena.len(), 5);
+    assert_eq!(arena.capacity(), 6);
 }
