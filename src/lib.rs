@@ -460,7 +460,19 @@ impl<T> Arena<T> {
 
     #[inline(never)]
     fn insert_slow_path(&mut self, value: T) -> Index {
-        let len = self.items.len();
+        let len = if self.capacity() == 0 {
+            // `drain()` sets the capacity to 0 and if the capacity is 0, the
+            // next `try_insert() `will refer to an out-of-range index because
+            // the next `reserve()` does not add element, resulting in a panic.
+            // So ensure that `self` have at least 1 capacity here.
+            //
+            // Ideally, this problem should be handled within `drain()`,but
+            // this problem cannot be handled within `drain()` because `drain()`
+            // returns an iterator that borrows `self` mutably.
+            1
+        } else {
+            self.items.len()
+        };
         self.reserve(len);
         self.try_insert(value)
             .map_err(|_| ())
@@ -894,8 +906,16 @@ impl<T> Arena<T> {
     /// assert!(arena.get(idx_2).is_none());
     /// ```
     pub fn drain(&mut self) -> Drain<T> {
+        let old_len = self.len;
+        if !self.is_empty() {
+            // Increment generation, but if there are no elements, do nothing to
+            // avoid unnecessary incrementing generation.
+            self.generation += 1;
+        }
+        self.free_list_head = None;
+        self.len = 0;
         Drain {
-            len: self.len,
+            len: old_len,
             inner: self.items.drain(..).enumerate(),
         }
     }
