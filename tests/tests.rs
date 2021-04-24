@@ -268,6 +268,24 @@ fn clear() {
 }
 
 #[test]
+fn clear_gen() {
+    let mut arena = Arena::with_capacity(1);
+    let idx_1 = arena.insert(1);
+    arena.clear();
+    let idx_2 = arena.insert(2);
+    assert_ne!(idx_1, idx_2);
+
+    // If there are no elements, do not increment generation.
+    let mut arena_2 = Arena::with_capacity(1);
+    arena_2.clear();
+    arena_2.clear();
+    arena_2.clear();
+    let idx_1 = arena_2.insert(1);
+    let gen = idx_1.into_raw_parts().1;
+    assert_eq!(gen, 0);
+}
+
+#[test]
 fn retain() {
     let mut arena = Arena::with_capacity(4);
     let index = arena.insert(2);
