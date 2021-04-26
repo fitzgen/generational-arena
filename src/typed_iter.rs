@@ -21,3 +21,12 @@ impl<'a, T> Iterator for TypedIter<'a, T> {
         self.inner.size_hint()
     }
 }
+
+impl<'a, T> DoubleEndedIterator for TypedIter<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        match self.inner.next_back() {
+            Some((idx, el)) => Some((idx.into(), el)),
+            None => None,
+        }
+    }
+}
