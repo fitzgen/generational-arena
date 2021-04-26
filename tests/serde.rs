@@ -9,6 +9,7 @@ extern crate serde_test;
 use generational_arena::{Arena, Index};
 use serde::{Deserialize, Serialize};
 use serde_test::{assert_ser_tokens, Token};
+use std::iter::FromIterator;
 use std::fmt::Debug;
 
 #[test]
@@ -137,6 +138,17 @@ fn fully_occupied_arena_can_be_serialized_and_deserialized() {
     }
     tokens.push(Token::SeqEnd);
     assert_tokens(&arena, &tokens);
+}
+
+#[test]
+fn arena_from_iter_can_be_serialized_and_deserialized_without_panic() {
+
+    let mut vec = vec![0usize];
+    let x = vec.drain(..);
+    let mut arena_in = Arena::from_iter(x);
+
+    let ser = serde_yaml::to_string(&arena_in).unwrap();
+    let arena_out: Arena<usize> = serde_yaml::from_str(&ser).unwrap();
 }
 
 /// Arena wrapper struct for comparing two arenas
