@@ -309,6 +309,11 @@ impl<T> Arena<T> {
                 }
             }
         }));
+        if !self.is_empty() {
+            // Increment generation, but if there are no elements, do nothing to
+            // avoid unnecessary incrementing generation.
+            self.generation += 1;
+        }
         self.free_list_head = Some(0);
         self.len = 0;
     }
