@@ -140,7 +140,7 @@ generational-arena = { version = "0.2", features = ["serde"] }
 ```
  */
 
-#![forbid(unsafe_code, missing_docs, missing_debug_implementations)]
+#![forbid(missing_docs, missing_debug_implementations)]
 #![no_std]
 
 cfg_if::cfg_if! {
@@ -154,7 +154,12 @@ cfg_if::cfg_if! {
 }
 
 use core::cmp;
-use core::iter::{self, Extend, FromIterator, FusedIterator};
+use core::iter::{
+    self,
+    Extend,
+    FromIterator,
+    FusedIterator,
+};
 use core::mem;
 use core::ops;
 use core::slice;
@@ -162,6 +167,23 @@ use core::slice;
 #[cfg(feature = "serde")]
 mod serde_impl;
 
+///
+pub mod prelude;
+
+mod typed_index;
+pub use typed_index::*;
+
+mod typed_index2;
+pub use typed_index2::*;
+
+mod ext;
+pub use ext::*;
+
+mod typed_iter;
+pub use typed_iter::*;
+
+mod typed_iter_mut;
+pub use typed_iter_mut::*;
 /// The `Arena` allows inserting and removing elements that are referred to by
 /// `Index`.
 ///
@@ -174,6 +196,7 @@ pub struct Arena<T> {
     len: usize,
 }
 
+#[repr(C)]
 #[derive(Clone, Debug)]
 enum Entry<T> {
     Free { next_free: Option<usize> },
@@ -194,6 +217,7 @@ enum Entry<T> {
 /// let idx = arena.insert(123);
 /// assert_eq!(arena[idx], 123);
 /// ```
+#[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Index {
     index: usize,
@@ -201,6 +225,11 @@ pub struct Index {
 }
 
 impl Index {
+    ///
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
     /// Create a new `Index` from its raw parts.
     ///
     /// The parts must have been returned from an earlier call to
@@ -208,8 +237,8 @@ impl Index {
     ///
     /// Providing arbitrary values will lead to malformed indices and ultimately
     /// panics.
-    pub fn from_raw_parts(a: usize, b: u64) -> Index {
-        Index {
+    pub fn from_raw_parts(a: usize, b: u64) -> Self {
+        Self {
             index: a,
             generation: b,
         }
@@ -230,8 +259,8 @@ impl Index {
 const DEFAULT_CAPACITY: usize = 4;
 
 impl<T> Default for Arena<T> {
-    fn default() -> Arena<T> {
-        Arena::new()
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -246,8 +275,8 @@ impl<T> Arena<T> {
     /// let mut arena = Arena::<usize>::new();
     /// # let _ = arena;
     /// ```
-    pub fn new() -> Arena<T> {
-        Arena::with_capacity(DEFAULT_CAPACITY)
+    pub fn new() -> Self {
+        Self::with_capacity(DEFAULT_CAPACITY)
     }
 
     /// Constructs a new, empty `Arena<T>` with the specified capacity.
@@ -269,7 +298,7 @@ impl<T> Arena<T> {
     /// // But now we are at capacity, and there is no more room.
     /// assert!(arena.try_insert(99).is_err());
     /// ```
-    pub fn with_capacity(n: usize) -> Arena<T> {
+    pub fn with_capacity(n: usize) -> Self {
         let n = cmp::max(n, 1);
         let mut arena = Arena {
             items: Vec::new(),
@@ -354,7 +383,7 @@ impl<T> Arena<T> {
                     value,
                 };
                 Ok(index)
-            },
+            }
         }
     }
 
@@ -395,7 +424,7 @@ impl<T> Arena<T> {
                     value: create(index),
                 };
                 Ok(index)
-            },
+            }
         }
     }
 
@@ -413,7 +442,7 @@ impl<T> Arena<T> {
                         generation: self.generation,
                     })
                 }
-            }
+            },
         }
     }
 
@@ -518,14 +547,19 @@ impl<T> Arena<T> {
             Entry::Occupied { generation, .. } if i.generation == generation => {
                 let entry = mem::replace(
                     &mut self.items[i.index],
-                    Entry::Free { next_free: self.free_list_head },
+                    Entry::Free {
+                        next_free: self.free_list_head,
+                    },
                 );
                 self.generation += 1;
                 self.free_list_head = Some(i.index);
                 self.len -= 1;
 
                 match entry {
-                    Entry::Occupied { generation: _, value } => Some(value),
+                    Entry::Occupied {
+                        generation: _,
+                        value,
+                    } => Some(value),
                     _ => unreachable!(),
                 }
             }
@@ -613,12 +647,16 @@ impl<T> Arena<T> {
     /// ```
     pub fn get(&self, i: Index) -> Option<&T> {
         match self.items.get(i.index) {
-            Some(Entry::Occupied {
-                generation,
-                value,
-            }) if *generation == i.generation => Some(value),
+            Some(Entry::Occupied { generation, value }) if *generation == i.generation => {
+                Some(value)
+            }
             _ => None,
         }
+    }
+
+    ///
+    pub fn typed_get(&self, i: TypedIndex<T>) -> Option<&T> {
+        self.get(i.inner())
     }
 
     /// Get an exclusive reference to the element at index `i` if it is in the
@@ -640,12 +678,16 @@ impl<T> Arena<T> {
     /// ```
     pub fn get_mut(&mut self, i: Index) -> Option<&mut T> {
         match self.items.get_mut(i.index) {
-            Some(Entry::Occupied {
-                generation,
-                value,
-            }) if *generation == i.generation => Some(value),
+            Some(Entry::Occupied { generation, value }) if *generation == i.generation => {
+                Some(value)
+            }
             _ => None,
         }
+    }
+
+    ///
+    pub fn typed_get_mut(&mut self, i: TypedIndex<T>) -> Option<&mut T> {
+        self.get_mut(i.inner())
     }
 
     /// Get a pair of exclusive references to the elements at index `i1` and `i2` if it is in the
@@ -705,18 +747,12 @@ impl<T> Arena<T> {
         };
 
         let item1 = match raw_item1 {
-            Entry::Occupied {
-                generation,
-                value,
-            } if *generation == i1.generation => Some(value),
+            Entry::Occupied { generation, value } if *generation == i1.generation => Some(value),
             _ => None,
         };
 
         let item2 = match raw_item2 {
-            Entry::Occupied {
-                generation,
-                value,
-            } if *generation == i2.generation => Some(value),
+            Entry::Occupied { generation, value } if *generation == i2.generation => Some(value),
             _ => None,
         };
 
@@ -885,6 +921,18 @@ impl<T> Arena<T> {
         }
     }
 
+    ///
+    pub fn typed_iter(&self) -> TypedIter<T> {
+        TypedIter { inner: self.iter() }
+    }
+
+    ///
+    pub fn typed_iter_mut(&mut self) -> TypedIterMut<T> {
+        TypedIterMut {
+            inner: self.iter_mut(),
+        }
+    }
+
     /// Iterate over elements of the arena and remove them.
     ///
     /// Yields pairs of `(Index, T)` items.
@@ -937,10 +985,13 @@ impl<T> Arena<T> {
     /// You should use the `get` method instead most of the time.
     pub fn get_unknown_gen(&self, i: usize) -> Option<(&T, Index)> {
         match self.items.get(i) {
-            Some(Entry::Occupied {
-                generation,
+            Some(Entry::Occupied { generation, value }) => Some((
                 value,
-            }) => Some((value, Index { generation: *generation, index: i})),
+                Index {
+                    generation: *generation,
+                    index: i,
+                },
+            )),
             _ => None,
         }
     }
@@ -957,10 +1008,13 @@ impl<T> Arena<T> {
     /// You should use the `get_mut` method instead most of the time.
     pub fn get_unknown_gen_mut(&mut self, i: usize) -> Option<(&mut T, Index)> {
         match self.items.get_mut(i) {
-            Some(Entry::Occupied {
-                generation,
+            Some(Entry::Occupied { generation, value }) => Some((
                 value,
-            }) => Some((value, Index { generation: *generation, index: i})),
+                Index {
+                    generation: *generation,
+                    index: i,
+                },
+            )),
             _ => None,
         }
     }

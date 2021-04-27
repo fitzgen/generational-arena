@@ -2,8 +2,15 @@
 extern crate criterion;
 extern crate generational_arena;
 
-use criterion::{Criterion, ParameterizedBenchmark, Throughput};
-use generational_arena::{Arena, Index};
+use criterion::{
+    Criterion,
+    ParameterizedBenchmark,
+    Throughput,
+};
+use generational_arena::{
+    Arena,
+    Index,
+};
 
 #[derive(Default)]
 struct Small(usize);

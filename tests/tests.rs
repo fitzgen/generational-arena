@@ -134,11 +134,17 @@ fn get_unknown_gen() {
         assert_eq!(id, idx);
         assert_eq!(*el, 5);
     } else {
-        panic!("element at index {} (without generation) should exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should exist at this point",
+            i
+        );
     }
     arena.remove(idx);
     if let Some((_, _)) = arena.get_unknown_gen(i) {
-        panic!("element at index {} (without generation) should not exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should not exist at this point",
+            i
+        );
     }
 }
 
@@ -154,12 +160,18 @@ fn get_unknown_gen_mut() {
         assert_eq!(*el, 5);
         *el += 1;
     } else {
-        panic!("element at index {} (without generation) should exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should exist at this point",
+            i
+        );
     }
     assert_eq!(arena.get_mut(idx).cloned(), Some(6));
     arena.remove(idx);
     if let Some((_, _)) = arena.get_unknown_gen_mut(i) {
-        panic!("element at index {} (without generation) should not exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should not exist at this point",
+            i
+        );
     }
 }
 
@@ -327,4 +339,20 @@ fn retain() {
 
     assert_eq!(arena.len(), 1);
     assert!(!arena.contains(index));
+}
+
+
+#[test]
+fn test_typed_iter() {
+    let mut arena = Arena::new();
+    let a = arena.insert(1);
+    let b = arena.insert(2);
+    let c = arena.insert(3);
+    let d = arena.insert(4);
+
+    let mut j = 1;
+    for (_, e) in arena.typed_iter() {
+        assert!(*e == j);
+        j += 1;
+    }
 }

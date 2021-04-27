@@ -1,10 +1,25 @@
-use super::{Arena, Entry, Index, Vec, DEFAULT_CAPACITY};
+use super::{
+    Arena,
+    Entry,
+    Index,
+    TypedIndex,
+    Vec,
+    DEFAULT_CAPACITY,
+};
 use core::cmp;
 use core::fmt;
 use core::iter;
 use core::marker::PhantomData;
-use serde::de::{Deserialize, Deserializer, SeqAccess, Visitor};
-use serde::ser::{Serialize, Serializer};
+use serde::de::{
+    Deserialize,
+    Deserializer,
+    SeqAccess,
+    Visitor,
+};
+use serde::ser::{
+    Serialize,
+    Serializer,
+};
 
 impl Serialize for Index {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -24,6 +39,25 @@ impl<'de> Deserialize<'de> for Index {
     {
         let (index, generation) = Deserialize::deserialize(deserializer)?;
         Ok(Index { index, generation })
+    }
+}
+
+impl<T> Serialize for TypedIndex<T> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.inner().serialize(serializer)
+    }
+}
+
+impl<'de, T> Deserialize<'de> for TypedIndex<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let inner = Deserialize::deserialize(deserializer)?;
+        Ok(TypedIndex::new(inner))
     }
 }
 
