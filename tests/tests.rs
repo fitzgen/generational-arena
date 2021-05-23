@@ -351,9 +351,9 @@ fn clone_from() {
     arena2.clone_from(&arena1);
 
     assert_eq!(arena1.len(), 2);
-    assert!(arena1.capacity() >= 4);
+    assert!(arena1.capacity() == 4);
     assert_eq!(arena2.len(), 2);
-    assert!(arena2.capacity() >= 5);
+    assert!(arena2.capacity() == 4);
 
     let values = arena1.iter().zip(arena2.iter());
     for ((_, v1), (_, v2)) in values {

@@ -185,19 +185,10 @@ impl<T: Clone> Clone for Arena<T> {
     }
 
     fn clone_from(&mut self, other: &Self) {
-        let old_capacity = self.capacity();
         self.items.clone_from(&other.items);
-        let capacity_diff = old_capacity.checked_sub(other.capacity());
         self.generation = other.generation;
         self.free_list_head = other.free_list_head;
         self.len = other.len;
-        if let Some(diff) = capacity_diff {
-            // if the old capacity was higher than the new capacity,
-            // that means that our Vec's len has some capacity left from `clone_from`
-            //
-            // let's fill those empty spaces with Free entries
-            self.extend_by(diff);
-        }
     }
 }
 
@@ -848,27 +839,6 @@ impl<T> Arena<T> {
         self.items.len()
     }
 
-    /// Extend the Arena with `amount` Free entries
-    ///
-    /// You should probably call `items.reserve_exact` beforehand
-    fn extend_by(&mut self, amount: usize) {
-        let start = self.items.len();
-        let end = self.items.len() + amount;
-        let old_head = self.free_list_head;
-        self.items.extend((start..end).map(|i| {
-            if i == end - 1 {
-                Entry::Free {
-                    next_free: old_head,
-                }
-            } else {
-                Entry::Free {
-                    next_free: Some(i + 1),
-                }
-            }
-        }));
-        self.free_list_head = Some(start);
-    }
-
     /// Allocate space for `additional_capacity` more elements in the arena.
     ///
     /// # Panics
@@ -887,7 +857,21 @@ impl<T> Arena<T> {
     /// ```
     pub fn reserve(&mut self, additional_capacity: usize) {
         self.items.reserve_exact(additional_capacity);
-        self.extend_by(additional_capacity);
+        let start = self.items.len();
+        let end = self.items.len() + additional_capacity;
+        let old_head = self.free_list_head;
+        self.items.extend((start..end).map(|i| {
+            if i == end - 1 {
+                Entry::Free {
+                    next_free: old_head,
+                }
+            } else {
+                Entry::Free {
+                    next_free: Some(i + 1),
+                }
+            }
+        }));
+        self.free_list_head = Some(start);
     }
 
     /// Iterate over shared references to the elements in this arena.
