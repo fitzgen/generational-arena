@@ -166,7 +166,7 @@ mod serde_impl;
 /// `Index`.
 ///
 /// [See the module-level documentation for example usage and motivation.](./index.html)
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Arena<T> {
     items: Vec<Entry<T>>,
     generation: u64,
@@ -174,10 +174,62 @@ pub struct Arena<T> {
     len: usize,
 }
 
-#[derive(Clone, Debug)]
+impl<T: Clone> Clone for Arena<T> {
+    fn clone(&self) -> Self {
+        Self {
+            items: self.items.clone(),
+            generation: self.generation,
+            free_list_head: self.free_list_head,
+            len: self.len
+        }
+    }
+
+    fn clone_from(&mut self, other: &Self) {
+        let old_capacity = self.capacity();
+        self.items.clone_from(&other.items);
+        let capacity_diff = old_capacity.checked_sub(other.capacity());
+        self.generation = other.generation;
+        self.free_list_head = other.free_list_head;
+        self.len = other.len;
+        if let Some(diff) = capacity_diff {
+            // if the old capacity was higher than the new capacity,
+            // that means that our Vec's len has some capacity left from `clone_from`
+            //
+            // let's fill those empty spaces with Free entries
+            self.extend_by(diff);
+        }
+    }
+}
+
+#[derive(Debug)]
 enum Entry<T> {
     Free { next_free: Option<usize> },
     Occupied { generation: u64, value: T },
+}
+
+impl<T: Clone> Clone for Entry<T> {
+    fn clone(&self) -> Self {
+        match self {
+            Entry::Free { next_free } => Entry::Free { next_free: *next_free },
+            Entry::Occupied { generation, value } => Entry::Occupied {
+                generation: *generation,
+                value: value.clone(),
+            }
+        }
+    }
+
+    fn clone_from(&mut self, other: &Self) {
+        match (self, other) {
+            (
+                Entry::Occupied { generation: dest_generation, value: dest_value },
+                Entry::Occupied { generation, value }
+            ) => {
+                *dest_generation = *generation;
+                dest_value.clone_from(value);
+            },
+            ( s, other ) => *s = other.clone(),
+        }
+    }
 }
 
 /// An index (and generation) into an `Arena`.
@@ -796,6 +848,27 @@ impl<T> Arena<T> {
         self.items.len()
     }
 
+    /// Extend the Arena with `amount` Free entries
+    ///
+    /// You should probably call `items.reserve_exact` beforehand
+    fn extend_by(&mut self, amount: usize) {
+        let start = self.items.len();
+        let end = self.items.len() + amount;
+        let old_head = self.free_list_head;
+        self.items.extend((start..end).map(|i| {
+            if i == end - 1 {
+                Entry::Free {
+                    next_free: old_head,
+                }
+            } else {
+                Entry::Free {
+                    next_free: Some(i + 1),
+                }
+            }
+        }));
+        self.free_list_head = Some(start);
+    }
+
     /// Allocate space for `additional_capacity` more elements in the arena.
     ///
     /// # Panics
@@ -813,22 +886,8 @@ impl<T> Arena<T> {
     /// # let _: Arena<usize> = arena;
     /// ```
     pub fn reserve(&mut self, additional_capacity: usize) {
-        let start = self.items.len();
-        let end = self.items.len() + additional_capacity;
-        let old_head = self.free_list_head;
         self.items.reserve_exact(additional_capacity);
-        self.items.extend((start..end).map(|i| {
-            if i == end - 1 {
-                Entry::Free {
-                    next_free: old_head,
-                }
-            } else {
-                Entry::Free {
-                    next_free: Some(i + 1),
-                }
-            }
-        }));
-        self.free_list_head = Some(start);
+        self.extend_by(additional_capacity);
     }
 
     /// Iterate over shared references to the elements in this arena.
