@@ -328,3 +328,35 @@ fn retain() {
     assert_eq!(arena.len(), 1);
     assert!(!arena.contains(index));
 }
+
+#[test]
+fn clone_from() {
+    let mut arena1 = Arena::new();
+    arena1.insert(vec![1, 2, 3, 4]);
+    arena1.insert(vec![5, 6, 7]);
+    let id3 = arena1.insert(vec![8, 9, 10, 11]);
+    let id4 = arena1.insert(vec![12]);
+    arena1.remove(id3);
+    arena1.remove(id4);
+
+    let mut arena2 = Arena::new();
+    arena2.insert(vec![1]);
+    let id2 = arena2.insert(vec![5, 6, 7]);
+    arena2.insert(vec![8, 9, 10, 11]);
+    let id4 = arena2.insert(vec![12]);
+    arena2.insert(vec![50]);
+    arena2.remove(id2);
+    arena2.remove(id4);
+
+    arena2.clone_from(&arena1);
+
+    assert_eq!(arena1.len(), 2);
+    assert!(arena1.capacity() == 4);
+    assert_eq!(arena2.len(), 2);
+    assert!(arena2.capacity() == 4);
+
+    let values = arena1.iter().zip(arena2.iter());
+    for ((_, v1), (_, v2)) in values {
+        assert_eq!(v1, v2);
+    }
+}
