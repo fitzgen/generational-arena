@@ -306,7 +306,6 @@ fn retain() {
     assert!(!arena.contains(index));
 }
 
-
 #[test]
 fn test_typed_iter() {
     let mut arena = Arena::new();

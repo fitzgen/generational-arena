@@ -644,6 +644,16 @@ impl<T> Arena<T> {
         self.get(i.inner())
     }
 
+    /// Sometimes we don't know the generation of a thing.
+    pub fn get_typed_index(&self, i: usize) -> Option<TypedIndex<T>> {
+        match self.items.get(i) {
+            Some(Entry::Occupied { generation, .. }) => {
+                Some(TypedIndex::new(Index::from_raw_parts(i, *generation)))
+            }
+            _ => None,
+        }
+    }
+
     /// Get an exclusive reference to the element at index `i` if it is in the
     /// arena.
     ///

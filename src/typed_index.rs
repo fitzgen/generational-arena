@@ -83,7 +83,7 @@ impl<T> Debug for TypedIndex<T> {
 impl<T> PartialOrd for TypedIndex<T> {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.inner.partial_cmp(&other.inner)
+        self.inner.index().partial_cmp(&other.inner.index())
     }
 }
 
