@@ -186,6 +186,9 @@ pub use typed_iter::*;
 
 mod typed_iter_mut;
 pub use typed_iter_mut::*;
+
+mod dyn_index;
+pub use dyn_index::*;
 /// The `Arena` allows inserting and removing elements that are referred to by
 /// `Index`.
 ///
@@ -644,16 +647,6 @@ impl<T> Arena<T> {
         self.get(i.inner())
     }
 
-    /// Sometimes we don't know the generation of a thing.
-    pub fn get_typed_index(&self, i: usize) -> Option<TypedIndex<T>> {
-        match self.items.get(i) {
-            Some(Entry::Occupied { generation, .. }) => {
-                Some(TypedIndex::new(Index::from_raw_parts(i, *generation)))
-            }
-            _ => None,
-        }
-    }
-
     /// Get an exclusive reference to the element at index `i` if it is in the
     /// arena.
     ///
@@ -982,6 +975,14 @@ impl<T> Arena<T> {
         }
     }
 
+    /// Sometimes we don't know the generation of a thing.
+    pub fn typed_get_unknown_gen(&self, i: usize) -> Option<(TypedIndex<T>, &T)> {
+        match self.get_unknown_gen(i) {
+            Some((v, idx)) => Some((idx.into(), v)),
+            _ => None,
+        }
+    }
+
     /// Given an i of `usize` without a generation, get an exclusive reference
     /// to the element and the matching `Index` of the entry behind `i`.
     ///
@@ -1002,6 +1003,33 @@ impl<T> Arena<T> {
                 },
             )),
             _ => None,
+        }
+    }
+
+    ///
+    pub fn raw_load(max_index: usize, i: impl IntoIterator<Item = (TypedIndex<T>, T)>) -> Self {
+        let mut max_gen = 0;
+        let mut i = i.into_iter();
+        let mut len = 0;
+        let mut entries: Vec<Option<(TypedIndex<T>, T)>> = Vec::with_capacity(max_index);
+        for e in entries.iter_mut() {
+            *e = None;
+        }
+
+        for (i, v) in i {
+            max_gen = max_gen.max(i.generation());
+            entries[i.index()] = Some((i, v));
+        }
+
+        let mut items = Vec::<Entry<T>>::with_capacity(entries.len());
+        for e in entries.iter_mut() {
+            //
+        }
+        Self {
+            generation: max_gen,
+            len,
+            items,
+            free_list_head: None,
         }
     }
 }

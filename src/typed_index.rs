@@ -24,11 +24,13 @@ impl<T> TypedIndex<T> {
     }
 
     ///
+    #[inline(always)]
     pub fn index(&self) -> usize {
         self.inner.index()
     }
 
     ///
+    #[inline(always)]
     pub fn generation(&self) -> u64 {
         self.inner.generation
     }
@@ -99,12 +101,14 @@ unsafe impl<T> Sync for TypedIndex<T> {}
 
 impl<T> std::ops::Index<TypedIndex<T>> for Arena<T> {
     type Output = T;
+    #[inline(always)]
     fn index(&self, index: TypedIndex<T>) -> &Self::Output {
         &self[index.inner]
     }
 }
 
 impl<T> std::ops::IndexMut<TypedIndex<T>> for Arena<T> {
+    #[inline(always)]
     fn index_mut(&mut self, index: TypedIndex<T>) -> &mut Self::Output {
         &mut self[index.inner]
     }
@@ -112,12 +116,14 @@ impl<T> std::ops::IndexMut<TypedIndex<T>> for Arena<T> {
 
 impl<T> std::ops::Index<&TypedIndex<T>> for Arena<T> {
     type Output = T;
+    #[inline(always)]
     fn index(&self, index: &TypedIndex<T>) -> &Self::Output {
         &self[index.inner]
     }
 }
 
 impl<T> std::ops::IndexMut<&TypedIndex<T>> for Arena<T> {
+    #[inline(always)]
     fn index_mut(&mut self, index: &TypedIndex<T>) -> &mut Self::Output {
         &mut self[index.inner]
     }
@@ -125,13 +131,13 @@ impl<T> std::ops::IndexMut<&TypedIndex<T>> for Arena<T> {
 
 impl<T> Arena<T> {
     ///
-    #[inline]
+    #[inline(always)]
     pub fn typed_insert(&mut self, value: T) -> TypedIndex<T> {
         TypedIndex::new(self.insert(value))
     }
 
     ///
-    #[inline]
+    #[inline(always)]
     pub fn typed_insert_with(&mut self, create: impl FnOnce(TypedIndex<T>) -> T) -> TypedIndex<T> {
         TypedIndex::new(self.insert_with(|index| {
             let idx = TypedIndex::new(index);
@@ -140,7 +146,7 @@ impl<T> Arena<T> {
     }
 
     ///
-    #[inline]
+    #[inline(always)]
     pub fn typed_remove(&mut self, index: TypedIndex<T>) -> Option<T> {
         self.remove(index.inner)
     }
