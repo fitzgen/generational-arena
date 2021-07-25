@@ -3,6 +3,10 @@ use crate::prelude::{
     Arena,
     TypedIndex,
 };
+fn type_id<T: 'static>() -> std::any::TypeId {
+    std::any::TypeId::of::<T>()
+}
+
 ///
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DynIndex {
@@ -11,13 +15,20 @@ pub struct DynIndex {
     name: &'static str,
 }
 
+impl DynIndex {
+    ///
+    #[inline]
+    pub fn matches<T: 'static>(&self) -> bool {
+        self.type_id == type_id::<T>()
+    }
+}
 
 unsafe impl Send for DynIndex {}
 unsafe impl Sync for DynIndex {}
 
 impl<T: 'static> From<TypedIndex<T>> for DynIndex {
     fn from(a: TypedIndex<T>) -> Self {
-        let type_id = std::any::TypeId::of::<T>();
+        let type_id = type_id::<T>();
         let name = std::any::type_name::<T>();
         Self {
             inner: a.inner(),
@@ -41,7 +52,7 @@ impl<T: 'static> std::ops::Index<DynIndex> for Arena<T> {
     #[inline(always)]
     fn index(&self, index: DynIndex) -> &Self::Output {
         //todo: make these debug asserts?
-        let type_id = std::any::TypeId::of::<T>();
+        let type_id = type_id::<T>();
         assert!(index.type_id == type_id);
         &self[index.inner]
     }
@@ -51,7 +62,7 @@ impl<T: 'static> std::ops::IndexMut<DynIndex> for Arena<T> {
     #[inline(always)]
     fn index_mut(&mut self, index: DynIndex) -> &mut Self::Output {
         //todo: make these debug asserts?
-        let type_id = std::any::TypeId::of::<T>();
+        let type_id = type_id::<T>();
         assert!(index.type_id == type_id);
         &mut self[index.inner]
     }
