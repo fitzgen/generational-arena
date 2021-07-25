@@ -11,6 +11,7 @@ pub struct DynIndex {
     name: &'static str,
 }
 
+
 unsafe impl Send for DynIndex {}
 unsafe impl Sync for DynIndex {}
 
@@ -28,25 +29,30 @@ impl<T: 'static> From<TypedIndex<T>> for DynIndex {
 
 impl<T: 'static> From<DynIndex> for TypedIndex<T> {
     fn from(idx: DynIndex) -> Self {
+        //todo: make these debug asserts?
         let type_id = std::any::TypeId::of::<T>();
         assert!(idx.type_id == type_id);
         idx.inner.into()
     }
 }
 
-impl<T> std::ops::Index<DynIndex> for Arena<T> {
+impl<T: 'static> std::ops::Index<DynIndex> for Arena<T> {
     type Output = T;
     #[inline(always)]
     fn index(&self, index: DynIndex) -> &Self::Output {
-        // &self[index.inner]
-        todo!()
+        //todo: make these debug asserts?
+        let type_id = std::any::TypeId::of::<T>();
+        assert!(index.type_id == type_id);
+        &self[index.inner]
     }
 }
 
-impl<T> std::ops::IndexMut<DynIndex> for Arena<T> {
+impl<T: 'static> std::ops::IndexMut<DynIndex> for Arena<T> {
     #[inline(always)]
     fn index_mut(&mut self, index: DynIndex) -> &mut Self::Output {
-        // &mut self[index.inner]
-        todo!()
+        //todo: make these debug asserts?
+        let type_id = std::any::TypeId::of::<T>();
+        assert!(index.type_id == type_id);
+        &mut self[index.inner]
     }
 }
