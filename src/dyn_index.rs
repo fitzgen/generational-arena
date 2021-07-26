@@ -8,12 +8,30 @@ fn type_id<T: 'static>() -> std::any::TypeId {
 }
 
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
 pub struct DynIndex {
     inner: crate::Index,
     type_id: std::any::TypeId,
     name: &'static str,
 }
+
+impl PartialOrd for DynIndex {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        self.inner.partial_cmp(&other.inner)
+    }
+}
+
+impl Ord for DynIndex {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        self.inner.cmp(&other.inner)
+    }
+}
+
+// impl std::hash::Hash for DynIndex {
+//     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+//         self.inner.hash
+//     }
+// }
 
 impl DynIndex {
     ///
@@ -47,23 +65,23 @@ impl<T: 'static> From<DynIndex> for TypedIndex<T> {
     }
 }
 
-impl<T: 'static> std::ops::Index<DynIndex> for Arena<T> {
-    type Output = T;
-    #[inline(always)]
-    fn index(&self, index: DynIndex) -> &Self::Output {
-        //todo: make these debug asserts?
-        let type_id = type_id::<T>();
-        assert!(index.type_id == type_id);
-        &self[index.inner]
-    }
-}
+// impl<T: 'static> std::ops::Index<DynIndex> for Arena<T> {
+//     type Output = T;
+//     #[inline(always)]
+//     fn index(&self, index: DynIndex) -> &Self::Output {
+//         //todo: make these debug asserts?
+//         let type_id = type_id::<T>();
+//         assert!(index.type_id == type_id);
+//         &self[index.inner]
+//     }
+// }
 
-impl<T: 'static> std::ops::IndexMut<DynIndex> for Arena<T> {
-    #[inline(always)]
-    fn index_mut(&mut self, index: DynIndex) -> &mut Self::Output {
-        //todo: make these debug asserts?
-        let type_id = type_id::<T>();
-        assert!(index.type_id == type_id);
-        &mut self[index.inner]
-    }
-}
+// impl<T: 'static> std::ops::IndexMut<DynIndex> for Arena<T> {
+//     #[inline(always)]
+//     fn index_mut(&mut self, index: DynIndex) -> &mut Self::Output {
+//         //todo: make these debug asserts?
+//         let type_id = type_id::<T>();
+//         assert!(index.type_id == type_id);
+//         &mut self[index.inner]
+//     }
+// }
