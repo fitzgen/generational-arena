@@ -8,7 +8,7 @@ fn type_id<T: 'static>() -> std::any::TypeId {
 }
 
 ///
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct DynIndex {
     inner: crate::Index,
     type_id: std::any::TypeId,
@@ -27,11 +27,11 @@ impl Ord for DynIndex {
     }
 }
 
-// impl std::hash::Hash for DynIndex {
-//     fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-//         self.inner.hash
-//     }
-// }
+impl std::hash::Hash for DynIndex {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.inner.hash(state)
+    }
+}
 
 impl DynIndex {
     ///
