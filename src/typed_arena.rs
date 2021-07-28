@@ -172,3 +172,19 @@ impl<T> std::ops::IndexMut<TypedIndex<T>> for TypedArena<T> {
         &mut self.inner[index]
     }
 }
+
+impl<T> std::ops::Index<&TypedIndex<T>> for TypedArena<T> {
+    type Output = T;
+
+    #[inline(always)]
+    fn index(&self, index: &TypedIndex<T>) -> &Self::Output {
+        &self.inner[index]
+    }
+}
+
+impl<T> std::ops::IndexMut<&TypedIndex<T>> for TypedArena<T> {
+    #[inline(always)]
+    fn index_mut(&mut self, index: &TypedIndex<T>) -> &mut Self::Output {
+        &mut self.inner[index]
+    }
+}
