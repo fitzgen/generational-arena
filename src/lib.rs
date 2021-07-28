@@ -1009,6 +1009,14 @@ impl<T> Arena<T> {
         }
     }
 
+    /// Sometimes we don't know the generation of a thing.
+    pub fn typed_get_unknown_gen_mut(&mut self, i: usize) -> Option<(TypedIndex<T>, &mut T)> {
+        match self.get_unknown_gen_mut(i) {
+            Some((v, idx)) => Some((idx.into(), v)),
+            _ => None,
+        }
+    }
+
     ///
     pub fn raw_load(max_index: usize, i: impl IntoIterator<Item = (TypedIndex<T>, T)>) -> Self {
         let mut max_gen = 0;

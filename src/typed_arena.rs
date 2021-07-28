@@ -141,6 +141,12 @@ impl<T> TypedArena<T> {
     pub fn get_unknown_gen(&self, i: usize) -> Option<(TypedIndex<T>, &T)> {
         self.inner.typed_get_unknown_gen(i)
     }
+
+    ///
+    #[inline(always)]
+    pub fn get_unknown_gen_mut(&mut self, i: usize) -> Option<(TypedIndex<T>, &mut T)> {
+        self.inner.typed_get_unknown_gen_mut(i)
+    }
 }
 
 impl<T> std::ops::Index<TypedIndex<T>> for TypedArena<T> {
