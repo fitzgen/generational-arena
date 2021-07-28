@@ -187,6 +187,9 @@ pub use typed_iter::*;
 mod typed_iter_mut;
 pub use typed_iter_mut::*;
 
+mod typed_arena;
+pub use typed_arena::*;
+
 mod dyn_index;
 pub use dyn_index::*;
 /// The `Arena` allows inserting and removing elements that are referred to by

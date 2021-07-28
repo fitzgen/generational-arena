@@ -3,6 +3,7 @@ pub use crate::{
     DynIndex,
     Iter,
     IterMut,
+    TypedArena,
     TypedIndex,
     TypedIndex2,
     TypedIter,
