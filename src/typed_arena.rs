@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{Index, prelude::*};
 
 ///
 #[derive(Debug)]
@@ -71,4 +71,68 @@ impl<T> TypedArena<T> {
     pub fn insert_with(&mut self, create: impl FnOnce(TypedIndex<T>) -> T) -> TypedIndex<T> {
         self.inner.typed_insert_with(create)
     }
+
+    ///
+    #[inline(always)]
+    pub fn remove(&mut self, i: TypedIndex<T>) -> Option<T> {
+        self.inner.typed_remove(i)
+    }
+
+    ///
+    #[inline(always)]
+    pub fn retain(&mut self, mut predicate: impl FnMut(TypedIndex<T>, &mut T) -> bool) {
+        self.inner.retain(|i, e| {
+            predicate(i.into(), e)
+        })
+    }
+
+    ///
+    #[inline(always)]
+    pub fn contains(&self, i: TypedIndex<T>) -> bool {
+        // self.inner.contains(Index::from_raw_parts(a, b))
+        todo!()
+    }
+
+    ///
+    #[inline(always)]
+    pub fn get(&self, i: TypedIndex<T>) -> Option<&T> {
+        self.inner.typed_get(i)
+    }
+
+    ///
+    #[inline(always)]
+    pub fn get_mut(&mut self, i: TypedIndex<T>) -> Option<&mut T> {
+        self.inner.typed_get_mut(i)
+    }
+
+    ///
+    #[inline(always)]
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    ///
+    #[inline(always)]
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
+
+    ///
+    #[inline(always)]
+    pub fn reserve(&mut self, additional_capacity: usize) {
+        self.inner.reserve(additional_capacity)
+    }
+
+    ///
+    #[inline(always)]
+    pub fn iter(&self) -> TypedIter<T> {
+        self.inner.typed_iter()
+    }
+
+    ///
+    #[inline(always)]
+    pub fn iter_mut(&mut self) -> TypedIterMut<T> {
+        self.inner.typed_iter_mut()
+    }
+
 }
