@@ -9,7 +9,8 @@ pub struct TypedArena<T> {
     inner: Arena<T>,
 }
 
-impl<T> TypedArena<T> {
+impl<T> Default for TypedArena<T> {
+    #[inline(always)]
     fn default() -> Self {
         Self {
             inner: Default::default(),
