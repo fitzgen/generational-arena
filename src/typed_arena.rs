@@ -1,4 +1,7 @@
-use crate::{Index, prelude::*};
+use crate::{
+    prelude::*,
+    Index,
+};
 
 ///
 #[derive(Debug)]
@@ -81,9 +84,7 @@ impl<T> TypedArena<T> {
     ///
     #[inline(always)]
     pub fn retain(&mut self, mut predicate: impl FnMut(TypedIndex<T>, &mut T) -> bool) {
-        self.inner.retain(|i, e| {
-            predicate(i.into(), e)
-        })
+        self.inner.retain(|i, e| predicate(i.into(), e))
     }
 
     ///
@@ -135,4 +136,25 @@ impl<T> TypedArena<T> {
         self.inner.typed_iter_mut()
     }
 
+    ///
+    #[inline(always)]
+    pub fn get_unknown_gen(&self, i: usize) -> Option<(TypedIndex<T>, &T)> {
+        self.inner.typed_get_unknown_gen(i)
+    }
+}
+
+impl<T> std::ops::Index<TypedIndex<T>> for TypedArena<T> {
+    type Output = T;
+
+    #[inline(always)]
+    fn index(&self, index: TypedIndex<T>) -> &Self::Output {
+        &self.inner[index]
+    }
+}
+
+impl<T> std::ops::IndexMut<TypedIndex<T>> for TypedArena<T> {
+    #[inline(always)]
+    fn index_mut(&mut self, index: TypedIndex<T>) -> &mut Self::Output {
+        &mut self.inner[index]
+    }
 }
