@@ -147,6 +147,13 @@ impl<T> TypedArena<T> {
     pub fn get_unknown_gen_mut(&mut self, i: usize) -> Option<(TypedIndex<T>, &mut T)> {
         self.inner.typed_get_unknown_gen_mut(i)
     }
+
+    ///
+    pub fn raw_load(max_index: usize, i: impl IntoIterator<Item = (TypedIndex<T>, T)>) -> Self {
+        let i = i.into_iter();
+        let size_hint = i.size_hint();
+        todo!();
+    }
 }
 
 impl<T> std::ops::Index<TypedIndex<T>> for TypedArena<T> {
