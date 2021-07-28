@@ -115,6 +115,12 @@ impl<T> TypedArena<T> {
 
     ///
     #[inline(always)]
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    ///
+    #[inline(always)]
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
     }
