@@ -1,0 +1,28 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: cargo install --vers "^3" cargo-readme
+    - run: cargo test
+    - run: cargo test --features serde
+
+  no_std:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: rustup default nightly
+    - run: cargo install --vers "^3" cargo-readme
+    - run: cargo test --no-default-features
+    - run: cargo test --no-default-features --features serde

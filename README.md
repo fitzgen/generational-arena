@@ -10,8 +10,8 @@ problem](https://en.wikipedia.org/wiki/ABA_problem) by using generational
 indices.
 
 Inspired by [Catherine West's closing keynote at RustConf
-2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas
-were presented in the context of an Entity-Component-System for games
+2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas (and many
+more!) were presented in the context of an Entity-Component-System for games
 programming.
 
 ### What? Why?
@@ -124,8 +124,7 @@ for (idx, value) in &arena {
 
 ### `no_std`
 
-To enable `no_std` compatibility, disable the on-by-default "std" feature. This
-currently requires nightly Rust and `feature(alloc)` to get access to `Vec`.
+To enable `no_std` compatibility, disable the on-by-default "std" feature.
 
 ```toml
 [dependencies]

@@ -9,8 +9,8 @@ problem](https://en.wikipedia.org/wiki/ABA_problem) by using generational
 indices.
 
 Inspired by [Catherine West's closing keynote at RustConf
-2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas
-were presented in the context of an Entity-Component-System for games
+2018](https://www.youtube.com/watch?v=aKLntZcp27M), where these ideas (and many
+more!) were presented in the context of an Entity-Component-System for games
 programming.
 
 ## What? Why?
@@ -123,8 +123,7 @@ for (idx, value) in &arena {
 
 ## `no_std`
 
-To enable `no_std` compatibility, disable the on-by-default "std" feature. This
-currently requires nightly Rust and `feature(alloc)` to get access to `Vec`.
+To enable `no_std` compatibility, disable the on-by-default "std" feature.
 
 ```toml
 [dependencies]
@@ -143,7 +142,6 @@ generational-arena = { version = "0.2", features = ["serde"] }
 
 #![forbid(missing_docs, missing_debug_implementations)]
 #![no_std]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
@@ -346,6 +344,11 @@ impl<T> Arena<T> {
                 }
             }
         }));
+        if !self.is_empty() {
+            // Increment generation, but if there are no elements, do nothing to
+            // avoid unnecessary incrementing generation.
+            self.generation += 1;
+        }
         self.free_list_head = Some(0);
         self.len = 0;
     }
@@ -497,7 +500,19 @@ impl<T> Arena<T> {
 
     #[inline(never)]
     fn insert_slow_path(&mut self, value: T) -> Index {
-        let len = self.items.len();
+        let len = if self.capacity() == 0 {
+            // `drain()` sets the capacity to 0 and if the capacity is 0, the
+            // next `try_insert() `will refer to an out-of-range index because
+            // the next `reserve()` does not add element, resulting in a panic.
+            // So ensure that `self` have at least 1 capacity here.
+            //
+            // Ideally, this problem should be handled within `drain()`,but
+            // this problem cannot be handled within `drain()` because `drain()`
+            // returns an iterator that borrows `self` mutably.
+            1
+        } else {
+            self.items.len()
+        };
         self.reserve(len);
         self.try_insert(value)
             .map_err(|_| ())
@@ -950,7 +965,16 @@ impl<T> Arena<T> {
     /// assert!(arena.get(idx_2).is_none());
     /// ```
     pub fn drain(&mut self) -> Drain<T> {
+        let old_len = self.len;
+        if !self.is_empty() {
+            // Increment generation, but if there are no elements, do nothing to
+            // avoid unnecessary incrementing generation.
+            self.generation += 1;
+        }
+        self.free_list_head = None;
+        self.len = 0;
         Drain {
+            len: old_len,
             inner: self.items.drain(..).enumerate(),
         }
     }
@@ -1355,6 +1379,7 @@ impl<'a, T> FusedIterator for IterMut<'a, T> {}
 /// ```
 #[derive(Debug)]
 pub struct Drain<'a, T: 'a> {
+    len: usize,
     inner: iter::Enumerate<vec::Drain<'a, Entry<T>>>,
 }
 
@@ -1367,13 +1392,48 @@ impl<'a, T> Iterator for Drain<'a, T> {
                 Some((_, Entry::Free { .. })) => continue,
                 Some((index, Entry::Occupied { generation, value })) => {
                     let idx = Index { index, generation };
+                    self.len -= 1;
                     return Some((idx, value));
                 }
-                None => return None,
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None;
+                }
+            }
+        }
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
+}
+
+impl<'a, T> DoubleEndedIterator for Drain<'a, T> {
+    fn next_back(&mut self) -> Option<Self::Item> {
+        loop {
+            match self.inner.next_back() {
+                Some((_, Entry::Free { .. })) => continue,
+                Some((index, Entry::Occupied { generation, value })) => {
+                    let idx = Index { index, generation };
+                    self.len -= 1;
+                    return Some((idx, value));
+                }
+                None => {
+                    debug_assert_eq!(self.len, 0);
+                    return None;
+                }
             }
         }
     }
 }
+
+impl<'a, T> ExactSizeIterator for Drain<'a, T> {
+    fn len(&self) -> usize {
+        self.len
+    }
+}
+
+impl<'a, T> FusedIterator for Drain<'a, T> {}
 
 impl<T> Extend<T> for Arena<T> {
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
