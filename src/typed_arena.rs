@@ -145,6 +145,12 @@ impl<T> TypedArena<T> {
 
     ///
     #[inline(always)]
+    pub fn drain(&mut self) -> crate::Drain<T> {
+        self.inner.drain()
+    }
+
+    ///
+    #[inline(always)]
     pub fn get_unknown_gen(&self, i: usize) -> Option<(TypedIndex<T>, &T)> {
         self.inner.typed_get_unknown_gen(i)
     }
