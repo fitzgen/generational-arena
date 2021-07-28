@@ -15,7 +15,19 @@ pub struct TypedIndex<T> {
 
 impl<T> TypedIndex<T> {
     ///
-    #[inline]
+    #[inline(always)]
+    pub fn from_raw_parts(a: usize, b: u64) -> Self {
+        Self::new(Index::from_raw_parts(a, b))
+    }
+
+    ///
+    #[inline(always)]
+    pub fn into_raw_parts(self) -> (usize, u64) {
+        self.inner.into_raw_parts()
+    }
+
+    ///
+    #[inline(always)]
     pub fn new(inner: Index) -> Self {
         Self {
             inner,
