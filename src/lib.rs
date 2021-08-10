@@ -964,6 +964,52 @@ impl<T> Arena<T> {
             _ => None,
         }
     }
+
+    /// Create a new [`Arena`] with different values but the same indices.
+    ///
+    /// This method allows you to use an [`Index`] from the old arena to access elements from the
+    /// new one. This is useful when you want to create two different collections with different
+    /// pieces of data but which have a one-to-one relationship.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut names = Arena::new();
+    /// let first = names.insert("John");
+    /// let second = names.insert("Tiffany");
+    /// let third = names.insert("Bella");
+    ///
+    /// let lengths = names.map(|_idx, name| name.len());
+    /// assert_eq!(lengths[first], 4);
+    /// assert_eq!(lengths[second], 7);
+    /// assert_eq!(lengths[third], 5);
+    /// ```
+    pub fn map<T2, F: FnMut(Index, &T) -> T2>(&self, mut map: F) -> Arena<T2> {
+        let mut items = Vec::with_capacity(self.items.len());
+        for (index, old_entry) in self.items.iter().enumerate() {
+            let new_entry = match old_entry {
+                Entry::Free { next_free } => {
+                    Entry::Free { next_free: *next_free }
+                },
+                Entry::Occupied { generation, value } => {
+                    let generation = *generation;
+                    Entry::Occupied {
+                        generation,
+                        value: (map)(Index { index, generation }, value),
+                    }
+                }
+            };
+            items.push(new_entry);
+        }
+        Arena {
+            items,
+            generation: self.generation,
+            free_list_head: self.free_list_head,
+            len: self.len,
+        }
+    }
 }
 
 impl<T> IntoIterator for Arena<T> {
