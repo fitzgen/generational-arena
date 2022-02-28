@@ -683,17 +683,47 @@ impl<T> Arena<T> {
         &mut self,
         indexes: &[Index; SIZE],
     ) -> [Option<&mut T>; SIZE] {
-        let mut mut_vec = Vec::with_capacity(SIZE);
-        for _ in 0..SIZE {
-            mut_vec.push(None);
-        }
-        let mut return_array: [_; SIZE] = mut_vec
+        self.get_vec_mut(indexes)
             .try_into()
-            .unwrap_or_else(|_| panic!("cast to array error"));
+            .unwrap_or_else(|_| panic!("cast to array error"))
+    }
+
+    /// Get exclusive references to the elements at indexes `indexes` if it is in the
+    /// arena.
+    ///
+    /// If the element is not in the arena, then `None` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut arena = Arena::new();
+    /// let idx1 = arena.insert(0);
+    /// let idx2 = arena.insert(1);
+    /// let idx3 = arena.insert(2);
+    ///
+    /// {
+    ///     let ret = arena.get_vec_mut(&[idx1, idx2, idx3]);
+    ///     for (i, item) in ret.into_iter().enumerate() {
+    ///         *item.unwrap() = 3 + i;
+    ///     }
+    /// }
+    ///
+    /// assert_eq!(arena[idx1], 3);
+    /// assert_eq!(arena[idx2], 4);
+    /// assert_eq!(arena[idx3], 5);
+    /// ```
+    pub fn get_vec_mut(&mut self, indexes: &[Index]) -> Vec<Option<&mut T>> {
+        let size = indexes.len();
+        let mut return_vec = Vec::with_capacity(size);
+        for _ in 0..size {
+            return_vec.push(None);
+        }
 
         // early return for edge case
-        if SIZE == 0 {
-            return return_array;
+        if size == 0 {
+            return return_vec;
         }
 
         // check that we have no overlapping indexes
@@ -704,13 +734,13 @@ impl<T> Arena<T> {
         unique_vec.sort_by_key(|(_index_in_array, arena_index)| arena_index.index);
 
         // check that the largest index is in bounds
-        let max_index = unique_vec[SIZE - 1].1;
+        let max_index = unique_vec[size - 1].1;
         if max_index.index > self.items.len() {
             panic!("{} index is out of bounds of data", max_index.index);
         }
 
         let uniq_index_len = unique_vec.len();
-        if SIZE != uniq_index_len {
+        if size != uniq_index_len {
             panic!("cannot return aliased mut refs to overlapping indexes");
         }
 
@@ -730,12 +760,12 @@ impl<T> Arena<T> {
                 }
                 _ => None,
             };
-            return_array[array_index] = v;
+            return_vec[array_index] = v;
             last_index = curr_index.index + 1;
         }
 
         // return results
-        return_array
+        return_vec
     }
 
     /// Get a pair of exclusive references to the elements at index `i1` and `i2` if it is in the
