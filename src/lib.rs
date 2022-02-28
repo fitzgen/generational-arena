@@ -354,7 +354,7 @@ impl<T> Arena<T> {
                     value,
                 };
                 Ok(index)
-            },
+            }
         }
     }
 
@@ -395,7 +395,7 @@ impl<T> Arena<T> {
                     value: create(index),
                 };
                 Ok(index)
-            },
+            }
         }
     }
 
@@ -413,7 +413,7 @@ impl<T> Arena<T> {
                         generation: self.generation,
                     })
                 }
-            }
+            },
         }
     }
 
@@ -518,14 +518,19 @@ impl<T> Arena<T> {
             Entry::Occupied { generation, .. } if i.generation == generation => {
                 let entry = mem::replace(
                     &mut self.items[i.index],
-                    Entry::Free { next_free: self.free_list_head },
+                    Entry::Free {
+                        next_free: self.free_list_head,
+                    },
                 );
                 self.generation += 1;
                 self.free_list_head = Some(i.index);
                 self.len -= 1;
 
                 match entry {
-                    Entry::Occupied { generation: _, value } => Some(value),
+                    Entry::Occupied {
+                        generation: _,
+                        value,
+                    } => Some(value),
                     _ => unreachable!(),
                 }
             }
@@ -613,10 +618,9 @@ impl<T> Arena<T> {
     /// ```
     pub fn get(&self, i: Index) -> Option<&T> {
         match self.items.get(i.index) {
-            Some(Entry::Occupied {
-                generation,
-                value,
-            }) if *generation == i.generation => Some(value),
+            Some(Entry::Occupied { generation, value }) if *generation == i.generation => {
+                Some(value)
+            }
             _ => None,
         }
     }
@@ -640,12 +644,80 @@ impl<T> Arena<T> {
     /// ```
     pub fn get_mut(&mut self, i: Index) -> Option<&mut T> {
         match self.items.get_mut(i.index) {
-            Some(Entry::Occupied {
-                generation,
-                value,
-            }) if *generation == i.generation => Some(value),
+            Some(Entry::Occupied { generation, value }) if *generation == i.generation => {
+                Some(value)
+            }
             _ => None,
         }
+    }
+
+    /// Get exclusive references to the elements at indexes `indexes` if it is in the
+    /// arena.
+    ///
+    /// If the element is not in the arena, then `None` is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use generational_arena::Arena;
+    ///
+    /// let mut arena = Arena::new();
+    /// let idx1 = arena.insert(42);
+    /// let idx2 = arena.insert(50);
+    /// let idx3 = arena.insert(60);
+    ///
+    /// let mut muts = arena.get_many_mut(std::vec![idx1, idx2, idx3]);
+    /// assert_eq!(**muts[0].as_ref().unwrap(), 42);
+    /// assert_eq!(**muts[1].as_ref().unwrap(), 50);
+    /// assert_eq!(**muts[2].as_ref().unwrap(), 60);
+    /// **muts[0].as_mut().unwrap() = 200;
+    /// assert_eq!(**muts[0].as_ref().unwrap(), 200);
+    /// ```
+    pub fn get_many_mut(&mut self, mut indexes: Vec<Index>) -> Vec<Option<&mut T>> {
+        // sort indexes for easier processing
+        indexes.sort_by_key(|i| i.index);
+        let index_len = indexes.len();
+
+        // early return for edge case
+        if index_len == 0 {
+            return Vec::new();
+        }
+
+        // check that the largest index is in bounds
+        let max_index = indexes[index_len - 1];
+        if max_index.index > self.items.len() {
+            panic!("{} index is out of bounds of data", max_index.index);
+        }
+
+        // check that we have no overlapping indexes
+        indexes.dedup();
+        let uniq_index_len = indexes.len();
+        if index_len != uniq_index_len {
+            panic!("cannot return aliased mut refs to overlapping indexes");
+        }
+
+        // leverage the unsafe code that's written in the standard library
+        // to safely get multiple unique disjoint mutable references
+        // out of the Vec
+        let mut mut_slices_iter = self.items.iter_mut();
+        let mut mut_slices = Vec::with_capacity(index_len);
+        let mut last_index = 0;
+        for curr_index in indexes {
+            let entry = mut_slices_iter.nth(curr_index.index - last_index);
+            let v = match entry {
+                Some(Entry::Occupied { generation, value })
+                    if *generation == curr_index.generation =>
+                {
+                    Some(value)
+                }
+                _ => None,
+            };
+            mut_slices.push(v);
+            last_index = curr_index.index + 1;
+        }
+
+        // return results
+        mut_slices
     }
 
     /// Get a pair of exclusive references to the elements at index `i1` and `i2` if it is in the
@@ -705,18 +777,12 @@ impl<T> Arena<T> {
         };
 
         let item1 = match raw_item1 {
-            Entry::Occupied {
-                generation,
-                value,
-            } if *generation == i1.generation => Some(value),
+            Entry::Occupied { generation, value } if *generation == i1.generation => Some(value),
             _ => None,
         };
 
         let item2 = match raw_item2 {
-            Entry::Occupied {
-                generation,
-                value,
-            } if *generation == i2.generation => Some(value),
+            Entry::Occupied { generation, value } if *generation == i2.generation => Some(value),
             _ => None,
         };
 
@@ -937,10 +1003,13 @@ impl<T> Arena<T> {
     /// You should use the `get` method instead most of the time.
     pub fn get_unknown_gen(&self, i: usize) -> Option<(&T, Index)> {
         match self.items.get(i) {
-            Some(Entry::Occupied {
-                generation,
+            Some(Entry::Occupied { generation, value }) => Some((
                 value,
-            }) => Some((value, Index { generation: *generation, index: i})),
+                Index {
+                    generation: *generation,
+                    index: i,
+                },
+            )),
             _ => None,
         }
     }
@@ -957,10 +1026,13 @@ impl<T> Arena<T> {
     /// You should use the `get_mut` method instead most of the time.
     pub fn get_unknown_gen_mut(&mut self, i: usize) -> Option<(&mut T, Index)> {
         match self.items.get_mut(i) {
-            Some(Entry::Occupied {
-                generation,
+            Some(Entry::Occupied { generation, value }) => Some((
                 value,
-            }) => Some((value, Index { generation: *generation, index: i})),
+                Index {
+                    generation: *generation,
+                    index: i,
+                },
+            )),
             _ => None,
         }
     }
@@ -1363,5 +1435,25 @@ impl<T> ops::Index<Index> for Arena<T> {
 impl<T> ops::IndexMut<Index> for Arena<T> {
     fn index_mut(&mut self, index: Index) -> &mut Self::Output {
         self.get_mut(index).expect("No element at index")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Arena;
+
+    #[test]
+    fn feature() {
+        let mut arena = Arena::new();
+        let idx1 = arena.insert(42);
+        let idx2 = arena.insert(50);
+        let idx3 = arena.insert(60);
+
+        let mut muts = arena.get_many_mut(std::vec![idx1, idx2, idx3]);
+        assert_eq!(**muts[0].as_ref().unwrap(), 42);
+        assert_eq!(**muts[1].as_ref().unwrap(), 50);
+        assert_eq!(**muts[2].as_ref().unwrap(), 60);
+        **muts[0].as_mut().unwrap() = 200;
+        assert_eq!(**muts[0].as_ref().unwrap(), 200);
     }
 }
