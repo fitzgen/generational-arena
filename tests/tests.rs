@@ -124,6 +124,26 @@ fn get2_mut() {
 }
 
 #[test]
+fn get_many_mut() {
+    let mut arena = Arena::with_capacity(3);
+    let idx1 = arena.insert(0);
+    let idx2 = arena.insert(1);
+    let idx3 = arena.insert(3);
+    {
+        let [item1, item2, item3] = arena.get_many_mut(&[idx1, idx2, idx3]);
+        assert_eq!(item1, Some(&mut 0));
+        assert_eq!(item2, Some(&mut 1));
+        assert_eq!(item3, Some(&mut 3));
+        *item1.unwrap() = 3;
+        *item2.unwrap() = 4;
+        *item3.unwrap() = 5;
+    }
+    assert_eq!(arena[idx1], 3);
+    assert_eq!(arena[idx2], 4);
+    assert_eq!(arena[idx3], 5);
+}
+
+#[test]
 fn get_unknown_gen() {
     let mut arena = Arena::new();
     let idx = arena.insert(5);
@@ -134,11 +154,17 @@ fn get_unknown_gen() {
         assert_eq!(id, idx);
         assert_eq!(*el, 5);
     } else {
-        panic!("element at index {} (without generation) should exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should exist at this point",
+            i
+        );
     }
     arena.remove(idx);
     if let Some((_, _)) = arena.get_unknown_gen(i) {
-        panic!("element at index {} (without generation) should not exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should not exist at this point",
+            i
+        );
     }
 }
 
@@ -154,12 +180,18 @@ fn get_unknown_gen_mut() {
         assert_eq!(*el, 5);
         *el += 1;
     } else {
-        panic!("element at index {} (without generation) should exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should exist at this point",
+            i
+        );
     }
     assert_eq!(arena.get_mut(idx).cloned(), Some(6));
     arena.remove(idx);
     if let Some((_, _)) = arena.get_unknown_gen_mut(i) {
-        panic!("element at index {} (without generation) should not exist at this point", i);
+        panic!(
+            "element at index {} (without generation) should not exist at this point",
+            i
+        );
     }
 }
 

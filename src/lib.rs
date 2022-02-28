@@ -154,6 +154,7 @@ cfg_if::cfg_if! {
 }
 
 use core::cmp;
+use core::convert::TryInto;
 use core::iter::{self, Extend, FromIterator, FusedIterator};
 use core::mem;
 use core::ops;
@@ -662,37 +663,54 @@ impl<T> Arena<T> {
     /// use generational_arena::Arena;
     ///
     /// let mut arena = Arena::new();
-    /// let idx1 = arena.insert(42);
-    /// let idx2 = arena.insert(50);
-    /// let idx3 = arena.insert(60);
+    /// let idx1 = arena.insert(0);
+    /// let idx2 = arena.insert(1);
+    /// let idx3 = arena.insert(2);
     ///
-    /// let mut muts = arena.get_many_mut(std::vec![idx1, idx2, idx3]);
-    /// assert_eq!(**muts[0].as_ref().unwrap(), 42);
-    /// assert_eq!(**muts[1].as_ref().unwrap(), 50);
-    /// assert_eq!(**muts[2].as_ref().unwrap(), 60);
-    /// **muts[0].as_mut().unwrap() = 200;
-    /// assert_eq!(**muts[0].as_ref().unwrap(), 200);
+    /// {
+    ///     let [item1, item2, item3] = arena.get_many_mut(&[idx1, idx2, idx3]);
+    ///
+    ///     *item1.unwrap() = 3;
+    ///     *item2.unwrap() = 4;
+    ///     *item3.unwrap() = 5;
+    /// }
+    ///
+    /// assert_eq!(arena[idx1], 3);
+    /// assert_eq!(arena[idx2], 4);
+    /// assert_eq!(arena[idx3], 5);
     /// ```
-    pub fn get_many_mut(&mut self, mut indexes: Vec<Index>) -> Vec<Option<&mut T>> {
-        // sort indexes for easier processing
-        indexes.sort_by_key(|i| i.index);
-        let index_len = indexes.len();
+    pub fn get_many_mut<const SIZE: usize>(
+        &mut self,
+        indexes: &[Index; SIZE],
+    ) -> [Option<&mut T>; SIZE] {
+        let mut mut_vec = Vec::with_capacity(SIZE);
+        for _ in 0..SIZE {
+            mut_vec.push(None);
+        }
+        let mut return_array: [_; SIZE] = mut_vec
+            .try_into()
+            .unwrap_or_else(|_| panic!("cast to array error"));
 
         // early return for edge case
-        if index_len == 0 {
-            return Vec::new();
+        if SIZE == 0 {
+            return return_array;
         }
 
+        // check that we have no overlapping indexes
+        let mut unique_vec: Vec<_> = indexes.iter().cloned().enumerate().collect();
+        unique_vec.dedup_by_key(|(_index_in_array, arena_index)| *arena_index);
+
+        // sort indexes for easier processing
+        unique_vec.sort_by_key(|(_index_in_array, arena_index)| arena_index.index);
+
         // check that the largest index is in bounds
-        let max_index = indexes[index_len - 1];
+        let max_index = unique_vec[SIZE - 1].1;
         if max_index.index > self.items.len() {
             panic!("{} index is out of bounds of data", max_index.index);
         }
 
-        // check that we have no overlapping indexes
-        indexes.dedup();
-        let uniq_index_len = indexes.len();
-        if index_len != uniq_index_len {
+        let uniq_index_len = unique_vec.len();
+        if SIZE != uniq_index_len {
             panic!("cannot return aliased mut refs to overlapping indexes");
         }
 
@@ -700,9 +718,9 @@ impl<T> Arena<T> {
         // to safely get multiple unique disjoint mutable references
         // out of the Vec
         let mut mut_slices_iter = self.items.iter_mut();
-        let mut mut_slices = Vec::with_capacity(index_len);
+
         let mut last_index = 0;
-        for curr_index in indexes {
+        for (array_index, curr_index) in unique_vec {
             let entry = mut_slices_iter.nth(curr_index.index - last_index);
             let v = match entry {
                 Some(Entry::Occupied { generation, value })
@@ -712,12 +730,12 @@ impl<T> Arena<T> {
                 }
                 _ => None,
             };
-            mut_slices.push(v);
+            return_array[array_index] = v;
             last_index = curr_index.index + 1;
         }
 
         // return results
-        mut_slices
+        return_array
     }
 
     /// Get a pair of exclusive references to the elements at index `i1` and `i2` if it is in the
@@ -1435,25 +1453,5 @@ impl<T> ops::Index<Index> for Arena<T> {
 impl<T> ops::IndexMut<Index> for Arena<T> {
     fn index_mut(&mut self, index: Index) -> &mut Self::Output {
         self.get_mut(index).expect("No element at index")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Arena;
-
-    #[test]
-    fn feature() {
-        let mut arena = Arena::new();
-        let idx1 = arena.insert(42);
-        let idx2 = arena.insert(50);
-        let idx3 = arena.insert(60);
-
-        let mut muts = arena.get_many_mut(std::vec![idx1, idx2, idx3]);
-        assert_eq!(**muts[0].as_ref().unwrap(), 42);
-        assert_eq!(**muts[1].as_ref().unwrap(), 50);
-        assert_eq!(**muts[2].as_ref().unwrap(), 60);
-        **muts[0].as_mut().unwrap() = 200;
-        assert_eq!(**muts[0].as_ref().unwrap(), 200);
     }
 }
