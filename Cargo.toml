@@ -10,9 +10,6 @@ repository = "https://github.com/fitzgen/generational-arena"
 version = "0.2.8"
 edition = "2018"
 
-[badges]
-travis-ci = { repository = "fitzgen/generational-arena" }
-
 [dependencies]
 cfg-if = "1.0.0"
 serde = { version = "1.0.102", optional = true, default-features = false }
