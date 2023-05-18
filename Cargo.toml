@@ -10,6 +10,15 @@ repository = "https://github.com/fitzgen/generational-arena"
 version = "0.2.8"
 edition = "2018"
 
+# The following notice applies to all the files in this source tree:
+#
+#     This Source Code Form is subject to the terms of the Mozilla Public
+#     License, v. 2.0. If a copy of the MPL was not distributed with this
+#     file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# (If you copy files from this project into another program which is not
+# licenced MPL-2.0, you should add that notice to each copied file.)
+
 [dependencies]
 cfg-if = "1.0.0"
 serde = { version = "1.0.102", optional = true, default-features = false }
