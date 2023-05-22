@@ -7,7 +7,7 @@ license = "MPL-2.0"
 name = "generational-arena"
 readme = "./README.md"
 repository = "https://github.com/fitzgen/generational-arena"
-version = "0.2.8"
+version = "0.2.9"
 edition = "2018"
 
 # The following notice applies to all the files in this source tree:
