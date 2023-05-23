@@ -177,7 +177,7 @@ quickcheck! {
         }
 
         arena.retain(|_, &mut b| b);
-        
+
         for live in live_indices.iter().cloned() {
             assert!(arena.contains(live));
         }
